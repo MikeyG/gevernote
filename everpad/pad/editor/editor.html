@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<style type='text/css'>
+    .tab {
+        margin-left: 12px;
+        width: 0px;
+        height: 0px;
+        display: inline-block
+    }
+</style>
+<body>
+<form>
+<h2 
+    contenteditable="true"
+    id='title'>{{ title }}</h2>
+<div 
+    contenteditable="true"
+    id='content'>{{ content }}</div>
+</form>
+<script type="text/javascript">
+    var isContent = false;
+    var currentLink = undefined;
+    var currentTable = undefined;
+    var pasteLock = false;
+
+    function insertEl(el) {
+        var _this = document.getElementById('content');
+        try {
+            if (!isContent) throw 1;
+            var selection = window.getSelection();
+            var range = selection.getRangeAt(0);
+            range.collapse(false);
+            range.deleteContents();
+            range.insertNode(el);
+            range = range.cloneRange();
+            range.setStart(el, 0);
+            range.setEndAfter(el);
+            range.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        } catch (Exception) {
+            _this.appendChild(el);
+        }
+    }
+
+    function insertCheck() {
+        var el = document.createElement('input');
+        el.setAttribute('type', 'checkbox');
+        el.addEventListener('change', function() {
+            window.qpage.page_changed();
+            this.setAttribute("checked", this.checked);
+        }, false);
+        insertEl(el);
+    }
+
+    function insertRes(preview, hash, mime) {
+        var el = document.createElement("img");
+        el.setAttribute('src', preview);
+        el.setAttribute('hash', hash);
+        el.setAttribute('type', mime)
+        el.addEventListener('contextmenu', function(event){
+            window.qpage.set_active_image_info(hash, el.width, el.height);
+        }, false);
+        insertEl(el);
+    }
+
+    function insertTable(rows, cols, width, id) {
+        var table = document.createElement("table");
+        table.setAttribute('border', 1);
+        table.setAttribute('width', width);
+        table.setAttribute('cellspacing', 0);
+        table.setAttribute('cellpadding', 2);
+
+        var tbody = document.createElement('tbody');
+        table.appendChild(tbody);
+        for (var i = 0; i < rows; i++) {
+            var row = table.insertRow(-1);
+            for (var j = 0; j < cols; j++) {
+                var cell = row.insertCell(-1);
+                cell.setAttribute('valign', 'top');
+                var br = document.createElement('br');
+                cell.appendChild(br);
+            }
+        }
+        table.setAttribute('id', id);
+        table.addEventListener('contextmenu', function() {
+            window.qpage.set_active_table(table.getAttribute('id'));
+            currentTable = table;
+        }, false);
+        insertEl(table);
+    }
+
+    function updateTable(rows, cols, width, id) {
+        var table = document.getElementById(id);
+        table.setAttribute('width', width);
+        for (var i = 0; i < rows; i++) {
+            var row = table.rows[i];
+            if (!row)
+                row = table.insertRow(-1);
+            for (var j = 0; j < cols; j++) {
+                var cell = row.cells[j];
+                if (!cell)
+                    cell = row.insertCell(-1);
+                cell.setAttribute('valign', 'top');
+                var br = document.createElement('br');
+                cell.appendChild(br);
+            }
+        }
+        while (table.rows.length > rows)
+            table.deleteRow(-1);
+
+        while (table.rows[0].cells.length > cols)
+            for (var i = 0; i < table.rows.length; i++) {
+                var row = table.rows[i];
+                row.deleteCell(-1);
+            }
+    }
+
+    function insertLink(url) {
+        var range = window.getSelection().getRangeAt(0),
+            content = range.extractContents(),
+            link = document.createElement('a');
+        if (!content.textContent)
+            content = document.createTextNode(url);
+        link.appendChild(content);
+        link.setAttribute('href', url);
+        insertEl(link);
+        link.addEventListener('contextmenu', function(ev) {
+            window.qpage.set_active_link(ev.target.getAttribute('href'));
+            currentLink = link;
+        }, false);
+    }
+
+    function changeLink(url) {
+        currentLink.setAttribute('href', url);
+    }
+
+    function removeLink() {
+        while (currentLink.firstChild)
+            currentLink.parentNode.insertBefore(currentLink.firstChild,
+                currentLink
+            );
+        currentLink.parentNode.removeChild(currentLink);
+    }
+
+    function changeRes(hash, width, height) {
+        var el = document.querySelector('[hash="' + hash + '"]');
+        el.setAttribute('width', width);
+        el.setAttribute('height', height);
+    }
+
+    function resExist(hash) {
+        var el = document.querySelector('[hash="' + hash + '"]');
+        if (el)
+            return true;
+        else
+            return false;
+    }
+
+    function getTableRows(id) {
+        var table = document.getElementById(id);
+        return table.rows.length;
+    }
+
+    function getTableCells(id) {
+        var table = document.getElementById(id);
+        return table.rows[0].cells.length;
+    }
+
+    var content = document.getElementById('content');
+
+    content.addEventListener('focus', function() {
+        window.qpage.set_current_focus("body");
+        isContent = true;
+    }, false);
+
+    function saveSelection() {
+        if (window.getSelection) {
+            sel = window.getSelection();
+            if (sel.getRangeAt && sel.rangeCount) {
+                return sel.getRangeAt(0);
+            }
+        } else if (document.selection && document.selection.createRange) {
+            return document.selection.createRange();
+        }
+        return null;
+    }
+
+    function restoreSelection(range) {
+        if (range) {
+            if (window.getSelection) {
+                sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } else if (document.selection && range.select) {
+                range.select();
+            }
+        }
+    }
+
+    function addLinks(element) {
+        var urlpattern= /\bhttps?:\/\/[^\s<>"`{}|\^\[\]\\]+/g;
+        findTextExceptInLinks(element, urlpattern, function(node, match) {
+            node.splitText(match.index+match[0].length);
+            var a= document.createElement('a');
+            a.href= match[0];
+            a.appendChild(node.splitText(match.index));
+            node.parentNode.insertBefore(a, node.nextSibling);
+            a.addEventListener('contextmenu', function(ev) {
+                window.qpage.set_active_link(ev.target.getAttribute('href'));
+                currentLink = a;
+            }, false);
+        });
+    }
+
+    function findTextExceptInLinks(element, pattern, callback) {
+        for (var childi = element.childNodes.length; childi-->0;) {
+            var child= element.childNodes[childi];
+            if (child.nodeType === Node.ELEMENT_NODE) {
+                if (child.tagName.toLowerCase()!=='a')
+                    findTextExceptInLinks(child, pattern, callback);
+            } else if (child.nodeType === Node.TEXT_NODE) {
+                var matches= [];
+                var match;
+                while (match= pattern.exec(child.data))
+                    matches.push(match);
+                for (var i= matches.length; i-->0;)
+                    callback.call(window, child, matches[i]);
+            }
+        }
+    }
+
+    content.addEventListener('paste', function(){
+        setTimeout(function(){
+            var range = saveSelection();
+            addLinks(content);
+            restoreSelection(range);
+        }, 0);
+    }, false);
+
+    function adjustBulletedList(untab) {
+        var el = document.getSelection().anchorNode;
+        while (el.parentNode) {
+            if (el.tagName == 'LI') {
+                if (untab) {
+                  document.execCommand('outdent');
+                } else {
+                  document.execCommand('indent');
+                }
+                return true;
+            }
+            el = el.parentNode;
+        }
+        return false;
+    }
+
+    function selectNextCell() {
+        var el = document.getSelection().anchorNode;
+        while (el.parentNode) {
+            if (el.tagName == 'TD') {
+                if (el.nextSibling) {
+                    // There are more cells in this row
+                    document.getSelection().selectAllChildren(el.nextSibling);
+                } else if (el.parentNode.nextSibling) {
+                    // There are more rows in this table
+                    document.getSelection().selectAllChildren(el.parentNode.nextSibling.firstChild);
+                } else {
+                    // Insert a new row
+                    var num_cells = el.parentNode.childNodes.length;
+                    var row = document.createElement('tr');
+                    var first_cell;
+
+                    for (var i = 0; i < num_cells; i++) {
+                        var cell = document.createElement('td');
+                        if (i == 0) {
+                            first_cell = cell;
+                        }
+                        var br = document.createElement('br');
+                        cell.appendChild(br);
+                        row.appendChild(cell);
+                    }
+                    el.parentNode.parentNode.appendChild(row);
+                    document.getSelection().selectAllChildren(first_cell);
+                }
+
+                return true;
+            }
+            el = el.parentNode;
+        }
+        return false;
+    }
+
+    content.addEventListener('keydown', function(event) {
+        if (event.keyCode == 9) {
+            event.preventDefault();
+
+            // If we're in a table, select the next cell and return immediately
+            if (selectNextCell()) {
+                return false;
+            }
+
+            if (adjustBulletedList(event.shiftKey)) {
+                return false;
+            }
+
+            var el = document.createElement("img");
+            el.className = "tab";
+            insertEl(el);
+            window.qpage.page_changed();
+            return false;
+        } else if (event.keyCode == 70 && event.ctrlKey) {
+            window.qpage.show_findbar();
+        } else if (event.keyCode == 71 && event.ctrlKey) {
+            if (!event.shiftKey) {
+                window.qpage.find_next();
+            } else {
+                window.qpage.find_previous();
+            }
+        } else if (event.keyCode == 27) {
+            event.preventDefault();
+        }
+    }, false);
+
+    var title = document.getElementById('title');
+
+    title.addEventListener('keydown', function(event) {
+        if (event.keyCode == 27) {
+            event.preventDefault();
+        }
+    });
+
+    title.addEventListener('focus', function() {
+        window.qpage.set_current_focus("head");
+        isContent = false;
+    }, false);
+
+    var checkboxes = document.querySelectorAll('input[type=checkbox]');
+
+    [].forEach.call(checkboxes, function(el){
+        el.addEventListener('change', function() {
+        window.qpage.page_changed();
+        this.setAttribute("checked", this.checked);
+    }, false);});
+
+    var resources = document.querySelectorAll('img[hash]');
+
+    [].forEach.call(resources, function(el){
+        el.addEventListener('contextmenu', function() {
+            window.qpage.set_active_image_info(el.getAttribute('hash'), el.width, el.height);
+    }, false);});
+
+    var links = document.querySelectorAll('a');
+
+    [].forEach.call(links, function(el){
+        el.addEventListener('contextmenu', function() {
+            window.qpage.set_active_link(el.getAttribute('href'));
+            currentLink = el;
+    }, false);});
+
+    var tables = document.querySelectorAll('table');
+
+    [].forEach.call(tables, function(el){
+        el.addEventListener('contextmenu', function() {
+            window.qpage.set_active_table(el.getAttribute('id'));
+            currentTable = el;
+    }, false);});
+</script>
+</body>
+</html>
