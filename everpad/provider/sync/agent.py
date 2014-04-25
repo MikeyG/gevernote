@@ -294,13 +294,17 @@ class SyncThread(QtCore.QThread):
             self.app.log("RateLimit early perform( ) - sleeping")
             self.status = const.STATUS_RATE
             time.sleep(self.sync_state.rate_limit_time)
+            # clear rate limit
+            self.sync_state.rate_limit = 0
+            self.sync_state.rate_limit_time = 0
+            
 
         # set status to sync
         self.status = const.STATUS_SYNC
         
         #@@@@ don't set until complete !!!  last_sync
         # get date/time to set new late sync value
-        self.last_sync = datetime.now()
+
 
         # Tell the world we are start sync
         self.sync_state_changed.emit(const.SYNC_STATE_START)
@@ -344,6 +348,10 @@ class SyncThread(QtCore.QThread):
             self.sync_state_changed.emit(const.SYNC_STATE_FINISH)
             self.status = const.STATUS_NONE
             self.all_notes = None
+
+
+        # check - should not set if error
+        self.sync_state.last_sync = datetime.now( )
 
         self.data_changed.emit()
         self.app.log("Sync performed.")
