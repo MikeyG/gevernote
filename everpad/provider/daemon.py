@@ -126,6 +126,7 @@ class ProviderApp(AppClass):
 
 # creates everpad directories - called from main( )
 def _create_dirs(dirs):
+
     """Create everpad dirs"""
     for path in dirs:
         try:
@@ -142,7 +143,7 @@ def main():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     
     # create everpad directories - _create_dirs local
-    _create_dirs(['~/.everpad/', '~/.everpad/data/', '~/.everpad/logs/'])
+    _create_dirs(['~/.geverpad/', '~/.geverpad/data/', '~/.geverpad/logs/'])
     
     # parse args using funky python built-in stuff
     # {none}, verbose, or version
@@ -159,7 +160,7 @@ def main():
     
     # lockfile using usr name getpass.getuser()
     # start main loop or error out
-    fp = open('/tmp/everpad-provider-%s.lock' % getpass.getuser(), 'w')
+    fp = open('/tmp/geverpad-provider-%s.lock' % getpass.getuser(), 'w')
     try:
         fcntl.lockf(fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
         # ref: http://dbus.freedesktop.org/doc/dbus-python/api/
@@ -170,7 +171,7 @@ def main():
         app = ProviderApp(args.verbose, sys.argv)
         app.exec_()
     except IOError:
-        print("everpad-provider already running")
+        print("geverpad-provider already running")
     except Exception as e:
         app.logger.debug(e)
 
