@@ -153,7 +153,11 @@ class SyncThread(QtCore.QThread):
                     # until the rate limit clears
                     time.sleep(e.rateLimitDuration)
                     self.status = const.STATUS_NONE
-            except socket.error:
+            except socket.error, e:
+                self.app.log(
+                    "Couldn't connect to remote server. Got: %s" %
+                        traceback.format_exc()
+                )
                 time.sleep(30)
                 
     # *** Initialize Sync
