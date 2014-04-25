@@ -82,8 +82,46 @@ class PullTag(BaseSync):
     def pull(self):
         """Pull tags from server"""
         
-        # Function: NoteStore.listTags
-        # Struct: Tag
+"""
+        # need to vary this for full and inc
+        # I want this to be 0 for full sync and
+        # start usn for inc sync
+        sync_start_usn = 0
+        
+        while True:
+            try:
+                tag_chunk = self.note_store.getFilteredSyncChunk(
+                    self.auth_token,
+                    sync_start_usn,
+                    self.sync_state.srv_update_count,
+                    SyncChunkFilter(includeTags=True)
+                )
+            except EDAMSystemException, e:                
+                if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
+                    self.app.log(
+                        "Rate limit in tag chunk: %d minutes" %
+                        (e.rateLimitDuration/60)
+                    )
+                    time.sleep(e.rateLimitDuration)
+        
+            for tag_ttype in self.tag_chunk.tags:
+ 
+            self.app.log(
+                'Pulling tag "%s" from remote server.' % tag_ttype.name)                   
+            
+            try:
+                tag = self._update_tag(tag_ttype)
+            except NoResultFound:
+                tag = self._create_tag(tag_ttype)
+                
+            self._exists.append(tag.id)
+
+            if self.tag_chunk.updateCount == self.tag_chunk.chunkHighUSN:
+                break
+            else:
+                self.sync_start_usn = self.tag_chunk.chunkHighUSN + 1
+"""
+
         for tag_ttype in self.note_store.listTags(self.auth_token):
             
             self.app.log(
@@ -94,6 +132,9 @@ class PullTag(BaseSync):
                 tag = self._create_tag(tag_ttype)
                 
             self._exists.append(tag.id)
+
+
+
 
         self.session.commit()
         self._remove_tags()
