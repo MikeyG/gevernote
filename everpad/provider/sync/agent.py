@@ -12,10 +12,14 @@ import socket
 
 """
     Rate Limit handling:
-        If provider starts in a Rate Limit period, it will be caught 
+    1.  If provider starts in a Rate Limit period, it will be caught 
     	at _init_network. A sleep command will execute and indicator 
     	will display Rate Limit.  There is really nothing else to do
     	but sleep at that point.
+
+    2.  Early in perform( ) check sync_state.rate_limit and if true
+        then sleep until clear.
+
 """
 
 
@@ -158,6 +162,9 @@ class SyncThread(QtCore.QThread):
                     "Couldn't connect to remote server. Got: %s" %
                         traceback.format_exc()
                 )
+                self.sync_state.connect_error_count+=1
+                self.app.log(
+                    "Total connect errors: %d" % self.sync_state.connect_error_count)
                 time.sleep(30)
                 
     # *** Initialize Sync
@@ -214,44 +221,6 @@ class SyncThread(QtCore.QThread):
             self.sync_state.rate_limit_time=0
             self.sync_state.connect_error_count=0
             self.session.commit()
-            
-    # *** Initialize Sync State
-    # Setup Sync table with current sync status
-    def _init_sync_state(self):
-        """Init sync state"""
-        
-        self.app.log("Execute _init_sync_state")
-        
-        while True:
-            try:
-                init_sync_state = self.note_store.getSyncState(self.auth_token)
-                self.sync_state.srv_current_time = init_sync_state.currentTime 
-                self.sync_state.srv_fullSyncBefore = init_sync_state.fullSyncBefore 
-                self.sync_state.srv_update_count = init_sync_state.updateCount 
-                self.sync_state.srv_uploaded_bytes = init_sync_state.uploaded 
-                break
-            except EDAMSystemException, e:
-                if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-                    self.app.log(
-                        "Rate limit _init_sync_state: %d minutes - sleeping" % 
-                        (e.rateLimitDuration/60)
-                    )
-                    self.status = const.STATUS_RATE
-                    # nothing I can think of doing other than sleeping here
-                    # until the rate limit clears
-                    time.sleep(e.rateLimitDuration)
-                    self.status = const.STATUS_NONE        
-            except socket.error, e:
-                # MKG: I want to track connect errors
-                self.sync_state.connect_error_count+=1
-                self.app.log(
-                    "Couldn't connect to remote server. Got: %s" %
-                    traceback.format_exc())
-                self.app.log(
-                    "Total connect errors: %d" % self.sync_state.connect_error_count)
-                # This is most likely a network failure. Return False so
-                # everpad-provider won't lock up and can try to sync up in the
-                # next run.        
 
 
     # ***** reimplement PySide.QtCore.QThread.run() *****
@@ -269,7 +238,6 @@ class SyncThread(QtCore.QThread):
         self._init_db()         # setup database
         self._init_sync()       # setup Sync table times
         self._init_network()    # get evernote info
-#        self._init_sync_state() # get server sync state info
 
         # Note: Deprecated since version 2.6: mutex module removed in Python 3.
         while True:
@@ -419,6 +387,44 @@ class SyncThread(QtCore.QThread):
         # self.sync_state.update_count = 1
 
         return reason
+
+    # *** Initialize Sync State
+    # Setup Sync table with current sync status
+    def _init_sync_state(self):
+        """Init sync state"""
+        
+        self.app.log("Execute _init_sync_state")
+        
+        while True:
+            try:
+                init_sync_state = self.note_store.getSyncState(self.auth_token)
+                self.sync_state.srv_current_time = init_sync_state.currentTime 
+                self.sync_state.srv_fullSyncBefore = init_sync_state.fullSyncBefore 
+                self.sync_state.srv_update_count = init_sync_state.updateCount 
+                self.sync_state.srv_uploaded_bytes = init_sync_state.uploaded 
+                break
+            except EDAMSystemException, e:
+                if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
+                    self.app.log(
+                        "Rate limit _init_sync_state: %d minutes - sleeping" % 
+                        (e.rateLimitDuration/60)
+                    )
+                    self.status = const.STATUS_RATE
+                    # nothing I can think of doing other than sleeping here
+                    # until the rate limit clears
+                    time.sleep(e.rateLimitDuration)
+                    self.status = const.STATUS_NONE        
+            except socket.error, e:
+                # MKG: I want to track connect errors
+                self.sync_state.connect_error_count+=1
+                self.app.log(
+                    "Couldn't connect to remote server. Got: %s" %
+                    traceback.format_exc())
+                self.app.log(
+                    "Total connect errors: %d" % self.sync_state.connect_error_count)
+                # This is most likely a network failure. Return False so
+                # everpad-provider won't lock up and can try to sync up in the
+                # next run.        
 
     
     # *** Force Sync ***
