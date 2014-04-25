@@ -1,5 +1,4 @@
-# from evernote.edam.userstore import EDAM_VERSION_MAJOR, EDAM_VERSION_MINOR
-
+# Constants 
 
 CONSUMER_KEY = 'nvbn-1422'
 CONSUMER_SECRET = 'c17c0979d0054310'
@@ -38,7 +37,7 @@ DEFAULT_INDICATOR_LAYOUT = [
 SCHEMA_VERSION = 5
 API_VERSION = 6
 VERSION = '2.5'
-DB_PATH = "~/.everpad/everpad.%s.db" % SCHEMA_VERSION
+DB_PATH = "~/.geverpad/geverpad.%s.db" % SCHEMA_VERSION
 
 ACTION_NONE = 0
 ACTION_CREATE = 1
