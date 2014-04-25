@@ -424,7 +424,8 @@ class SyncThread(QtCore.QThread):
                 self.sync_state.srv_current_time = init_sync_state.currentTime 
                 self.sync_state.srv_fullSyncBefore = init_sync_state.fullSyncBefore 
                 self.sync_state.srv_update_count = init_sync_state.updateCount 
-                self.sync_state.srv_uploaded_bytes = init_sync_state.uploaded 
+                self.sync_state.srv_uploaded_bytes = init_sync_state.uploaded
+                self.session.commit()
                 break
             except EDAMSystemException, e:
                 if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
