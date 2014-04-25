@@ -265,7 +265,7 @@ class SyncThread(QtCore.QThread):
         self._init_db()         # setup database
         self._init_sync()       # setup Sync table times
         self._init_network()    # get evernote info
-        self._init_sync_state() # get server sync state info
+#        self._init_sync_state() # get server sync state info
 
         # Note: Deprecated since version 2.6: mutex module removed in Python 3.
         while True:
