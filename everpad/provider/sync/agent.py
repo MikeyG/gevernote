@@ -16,9 +16,7 @@ import socket
     	at _init_network. A sleep command will execute and indicator 
     	will display Rate Limit.  There is really nothing else to do
     	but sleep at that point.
-    	
-    	
-    	
+	
     	 
 """
 
@@ -252,29 +250,13 @@ class SyncThread(QtCore.QThread):
         self.app.log("Performing sync perform( )")
         
         # set status to sync
-        
-        # if Rate 
         self.status = const.STATUS_SYNC
         
         #@@@@ don't set until complete !!!  last_sync
-        
         # get date/time to set new late sync value
         self.last_sync = datetime.now()
 
-        """        
-        I don't want to do this yet MKG
-        if self.sync_state.rate_limit:
-            if self.sync_state.last_sync < self.sync_state.rate_limit_time:
-                self.status = const.STATUS_NONE
-                self.app.log("Stopped - Still Rate Limit.")
-                return
-            else:
-                self.sync_state.rate_limit = 0
-                self.app.log("Rate Limit cleared.")
-        """
-
-        # ??? Tell the world we are start sync
-        
+        # Tell the world we are start sync
         self.sync_state_changed.emit(const.SYNC_STATE_START)
 
         need_to_update = self._need_to_update()
@@ -294,9 +276,20 @@ class SyncThread(QtCore.QThread):
             
             # if we get a good finish - update the count to match server
             self.sync_state.update_count = self.sync_state.srv_update_count
-            
+
+        except EDAMSystemException, e:
+            if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
+                self.app.log(
+                    "Rate limit perform: %d minutes - sleeping" % 
+                    (e.rateLimitDuration/60)
+                )
+                self.session.rollback()
+                self._init_db()
+                self.status = const.STATUS_RATE
+                time.sleep(e.rateLimitDuration)
+                self.status = const.STATUS_NONE            
+        
         except Exception, e:  # maybe log this
-            self.app.log("perform error")
             self.session.rollback()
             self._init_db()
             self.app.log(e)
