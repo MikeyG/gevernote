@@ -358,8 +358,15 @@ class Place(Base):
 class Sync(Base):
     __tablename__ = 'sync'
     id = Column(Integer, primary_key=True)
-    update_count = Column(Integer)          # current client count
-    srv_update_count = Column(Integer)      # current server count    
+    update_count = Column(Integer)          # USN current client count
+
+    # server sync info returned from getSyncState
+    srv_current_time = Column(Integer)
+    srv_update_count = Column(Integer)      # USN current server count    
+    srv_uploaded_bytes = Column(Integer)
+    srv_fullSyncBefore = Column(Integer)
+
+
     last_sync = Column(Integer)
     virgin_db = Column(Integer)
     # MKG:  Think I am going to track rate limit here    
