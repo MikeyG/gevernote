@@ -381,17 +381,18 @@ class Place(Base):
 class Sync(Base):
     __tablename__ = 'sync'
     id = Column(Integer, primary_key=True)
+    
+    # local counts
     update_count = Column(Integer)          # USN current client count
-
-    # server sync info returned from getSyncState
-    srv_current_time = Column(Integer)
-    srv_update_count = Column(Integer)      # USN current server count    
-    srv_uploaded_bytes = Column(Integer)
-    srv_fullSyncBefore = Column(Integer)
-
-
-    last_sync = Column(Integer)
+    last_sync = Column(Integer)             # Last error free sync
     virgin_db = Column(Integer)
+    
+    # server sync info returned from getSyncState
+    srv_current_time = Column(Integer)      # Current server time at call
+    srv_update_count = Column(Integer)      # USN current server count    
+    srv_uploaded_bytes = Column(Integer)    # Just because
+    srv_fullSyncBefore = Column(Integer)    # Date/Time before next full sync
+
     # MKG:  Think I am going to track rate limit here    
     rate_limit = Column(Integer)
     rate_limit_time = Column(Integer)
