@@ -275,7 +275,10 @@ class PullNote(BaseSync, ShareNoteMixin):
                 note, note_full_ttype = self._create_note(note_meta_ttype)
                 
             self.app.log(note_meta_ttype.guid)
-            self.app.log(note_full_ttype.guid)
+            if note_full_ttype != None:
+                self.app.log(note_full_ttype.guid)
+            else:
+                self.app.log("Full note not pulled")	
 
             
             # At this point note is the note as defind in models.py
