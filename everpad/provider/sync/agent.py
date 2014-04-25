@@ -274,10 +274,6 @@ class SyncThread(QtCore.QThread):
         # set status to sync
         self.status = const.STATUS_SYNC
         
-        #@@@@ don't set until complete !!!  last_sync
-        # get date/time to set new late sync value
-
-
         # Tell the world we are start sync
         self.sync_state_changed.emit(const.SYNC_STATE_START)
 
