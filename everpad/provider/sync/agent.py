@@ -271,10 +271,8 @@ class SyncThread(QtCore.QThread):
         while True:
             self.mutex.lock()
             self.wait_condition.wait(self.mutex)
-            
             # do sync ....
             self.perform()
-            
             self.mutex.unlock()
             
             # sleep 1 second
@@ -290,7 +288,13 @@ class SyncThread(QtCore.QThread):
         """Perform all sync"""
         
         self.app.log("Execute perform( )")
-        
+
+        # A good place to check and wait if rate limited
+        if self.sync_state.rate_limit:
+            self.app.log("RateLimit early perform( ) - sleeping")
+            self.status = const.STATUS_RATE
+            time.sleep(self.sync_state.rate_limit_time)
+
         # set status to sync
         self.status = const.STATUS_SYNC
         
