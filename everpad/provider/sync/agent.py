@@ -22,7 +22,6 @@ import socket
 
 """
 
-
 # ********** SyncThread **********
 # 
 # from daemon.py 
@@ -196,14 +195,6 @@ class SyncThread(QtCore.QThread):
         # to say this is an initial sync.  Let's set up sync with current server values 
         # right from the start.
         
-        # My thoughts right now
-        # update_count - 0 since no sync
-        # last_sync - ??? don't know about this
-        # virgin_db - if == 1 then this is a first run
-        # rate_limit - if provider is in a rate limit then == 1
-        # rate_limit_time - rate limit time - need more here
-        # connect_error_count - just play, might want to track later
-        
         if not self.sync_state:
             self.sync_state = models.Sync(
                 update_count=0, 
@@ -301,19 +292,10 @@ class SyncThread(QtCore.QThread):
  
         self.app.log("Local account updates count:  %s" % self.sync_state.update_count)
         self.app.log("Remote account updates count: %s" % self.sync_state.srv_update_count)        
+
 """        
         need_to_update = self._need_to_update()
-        
-        # we hit a rate limit, might as well bug out here
-        if self.sync_state.rate_limit and not need_to_update:
-            self.sync_state_changed.emit(const.SYNC_STATE_FINISH)
-            self.status = const.STATUS_NONE
-            self.data_changed.emit()
-            self.app.log("Stopped - Rate Limit.")
-            return
 """
-
-
         try:
             if need_to_update:
                 self.remote_changes()
@@ -344,14 +326,13 @@ class SyncThread(QtCore.QThread):
             self.status = const.STATUS_NONE
             self.all_notes = None
 
-
         # check - should not set if error
         self.sync_state.last_sync = datetime.now( )
 
         self.data_changed.emit()
         self.app.log("Sync performed.")
 
-
+"""
     def _need_to_update(self):
         """Check need for update notes"""
 
@@ -410,6 +391,7 @@ class SyncThread(QtCore.QThread):
         # self.sync_state.update_count = 1
 
         return reason
+"""
 
     # *** Get Server Sync State
     # Sync table with current sync status
@@ -462,7 +444,6 @@ class SyncThread(QtCore.QThread):
     def sync(self):
         """Do sync"""
         self.wait_condition.wakeAll()
-
 
     # ******** Sync Args *********
     # get sync args for local_changes and remote_changes
