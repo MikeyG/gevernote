@@ -269,7 +269,6 @@ class SyncThread(QtCore.QThread):
             # clear rate limit
             self.sync_state.rate_limit = 0
             self.sync_state.rate_limit_time = 0
-            
 
         # set status to sync
         self.status = const.STATUS_SYNC
@@ -277,6 +276,32 @@ class SyncThread(QtCore.QThread):
         # Tell the world we are start sync
         self.sync_state_changed.emit(const.SYNC_STATE_START)
 
+        # update server sync info
+        self._get_sync_state()
+        
+        # temp:
+        force_sync = 1
+        
+        if force_sync:
+            self.app.log("force_sync sync")
+            self.sync_state.update_count = 0
+            need_to_update = True            
+        elif self.sync_state.srv_fullSyncBefore < self.sync_state.srv_current_time:
+            # Full sync needed
+            self.app.log("fullSyncBefore sync")
+            self.sync_state.update_count = 0
+            need_to_update = True
+        elif self.sync_state.update_count < self.sync_state.srv_update_count:
+            # Do incremental sync
+            self.app.log("fullSyncBefore sync")
+            need_to_update = True
+        else:
+            self.app.log("local only sync")
+            need_to_update = False
+ 
+        self.app.log("Local account updates count:  %s" % self.sync_state.update_count)
+        self.app.log("Remote account updates count: %s" % self.sync_state.srv_update_count)        
+"""        
         need_to_update = self._need_to_update()
         
         # we hit a rate limit, might as well bug out here
@@ -286,6 +311,8 @@ class SyncThread(QtCore.QThread):
             self.data_changed.emit()
             self.app.log("Stopped - Rate Limit.")
             return
+"""
+
 
         try:
             if need_to_update:
@@ -298,7 +325,7 @@ class SyncThread(QtCore.QThread):
         except EDAMSystemException, e:
             if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
                 self.app.log(
-                    "Rate limit perform: %d minutes - sleeping" % 
+                    "Rate limit end of perform: %d minutes - sleeping" % 
                     (e.rateLimitDuration/60)
                 )
                 self.session.rollback()
@@ -384,12 +411,12 @@ class SyncThread(QtCore.QThread):
 
         return reason
 
-    # *** Initialize Sync State
-    # Setup Sync table with current sync status
-    def _init_sync_state(self):
-        """Init sync state"""
+    # *** Get Server Sync State
+    # Sync table with current sync status
+    def _get_sync_state(self):
+        """Get sync state"""
         
-        self.app.log("Execute _init_sync_state")
+        self.app.log("Execute _get_sync_state")
         
         while True:
             try:
