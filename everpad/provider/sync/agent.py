@@ -211,10 +211,10 @@ class SyncThread(QtCore.QThread):
         while True:
             try:
                 init_sync_state = note_store.getSyncState(self.auth_token)
-                init_sync_state.currentTime 
-                init_sync_state.fullSyncBefore 
-                init_sync_state.updateCount 
-                init_sync_state.uploaded 
+                self.sync_state.srv_current_time = init_sync_state.currentTime 
+                self.sync_state.srv_fullSyncBefore = init_sync_state.fullSyncBefore 
+                self.sync_state.srv_update_count = init_sync_state.updateCount 
+                self.sync_state.srv_uploaded_bytes = init_sync_state.uploaded 
                 break
             except EDAMSystemException, e:
                 if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
