@@ -252,26 +252,47 @@ class Note(Base):
 # *************************************************************
 # Notebook ORM class to save note specific data to the database
 #
+# Struct: Notebook
+#   guid Guid 
+#   name string 
+#   updateSequenceNum i32 
+#   defaultNotebook bool 
+#   serviceCreated Timestamp 
+#   serviceUpdated Timestamp 
+#   * Maybe look at this later -publishing 
+#   * Maybe look at this later -published 
+#   stack string 
+#   * Maybe look at this later -sharedNotebooks 
+#   * Not used -businessNotebook 
+#   * Not used -contact 
+#   * Maybe look at this later -restrictions
+
 class Notebook(Base):
     __tablename__ = 'notebooks'
     id = Column(Integer, primary_key=True)
     guid = Column(String)
     name = Column(String)
+    usn = Column(Integer)
     default = Column(Boolean)
     service_created = Column(Integer)
     service_updated = Column(Integer)
-    action = Column(Integer)
     stack = Column(String)
 
+    # local use
+    action = Column(Integer)
+
+    # Generate database notebook record
     def from_api(self, notebook):
         """Fill data from api"""
         self.name = notebook.name.decode('utf8')
+        self.usn = notebook.usn
         self.default = notebook.defaultNotebook
         self.service_created = notebook.serviceCreated
         self.service_updated = notebook.serviceUpdated
-        self.action = const.ACTION_NONE
         if notebook.stack:
             self.stack = notebook.stack.decode('utf8')
+
+        self.action = const.ACTION_NONE
 
     # -- get/set notebook's stack date
     @property
@@ -294,6 +315,8 @@ class Tag(Base):
     guid = Column(String)
     name = Column(String)
     parentGuid = Column(String)
+
+    # local use
     action = Column(Integer)
 
     def from_api(self, tag):
