@@ -38,15 +38,20 @@ class SyncThread(QtCore.QThread):
 
     def __init__(self, *args, **kwargs):
         """Init default values"""
+        
         QtCore.QThread.__init__(self, *args, **kwargs)
         
         # non - KDE
         # from PySide.QtCore import QCoreApplication
         # Class = QCoreApplication
         # http://srinikom.github.io/pyside-docs/PySide/QtCore/QCoreApplication.html
+        # QCoreApplication * QCoreApplication::instance () [static]
+        # Returns a pointer to the application's QCoreApplication (or QApplication) instance.
         self.app = AppClass.instance()
+        
         # setup timer
         self._init_timer()
+        
         # setup wait_condition and mutex
         self._init_locks()
 
@@ -196,9 +201,10 @@ class SyncThread(QtCore.QThread):
         # right from the start.
         
         if not self.sync_state:
+            # initial "no database" setup
             self.sync_state = models.Sync(
                 update_count=0, 
-                last_sync=self.last_sync,
+                last_sync=0,
                 virgin_db=1,
                 rate_limit=0,
                 rate_limit_time=0,
@@ -212,7 +218,6 @@ class SyncThread(QtCore.QThread):
             self.sync_state.rate_limit_time=0
             self.sync_state.connect_error_count=0
             self.session.commit()
-
 
     # ***** reimplement PySide.QtCore.QThread.run() *****
     #
@@ -242,8 +247,6 @@ class SyncThread(QtCore.QThread):
             time.sleep(1)  # prevent cpu eating
             
     # ********** end main running loop **************
-
-    # ********** Working Routines **********
 
     # ******** Perform Sync Operations Local and Remote *********
     #
