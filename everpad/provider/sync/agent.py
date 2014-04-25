@@ -16,8 +16,6 @@ import socket
     	at _init_network. A sleep command will execute and indicator 
     	will display Rate Limit.  There is really nothing else to do
     	but sleep at that point.
-	
-    	 
 """
 
 
@@ -109,7 +107,7 @@ class SyncThread(QtCore.QThread):
             delay = const.DEFAULT_SYNC_DELAY
 
         # if delay is not set to manual - SYNC_MANUAL = -1
-        # then start the timer
+        # then start the timer - seconds
         if delay != const.SYNC_MANUAL:
             self.timer.start(delay)
             
@@ -204,6 +202,33 @@ class SyncThread(QtCore.QThread):
             self.sync_state.rate_limit_time=0
             self.sync_state.connect_error_count=0
             self.session.commit()
+            
+    # *** Initialize Sync State
+    # Setup Sync table with current sync status
+    def _init_sync_state(self):
+        """Init sync state"""
+        
+        while True:
+            try:
+                init_sync_state = note_store.getSyncState(self.auth_token)
+                init_sync_state.currentTime 
+                init_sync_state.fullSyncBefore 
+                init_sync_state.updateCount 
+                init_sync_state.uploaded 
+                break
+            except EDAMSystemException, e:
+                if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
+                    self.app.log(
+                        "Rate limit _init_sync_state: %d minutes - sleeping" % 
+                        (e.rateLimitDuration/60)
+                    )
+                    self.status = const.STATUS_RATE
+                    # nothing I can think of doing other than sleeping here
+                    # until the rate limit clears
+                    time.sleep(e.rateLimitDuration)
+                    self.status = const.STATUS_NONE        
+        
+        
 
     # ***** reimplement PySide.QtCore.QThread.run() *****
     #
