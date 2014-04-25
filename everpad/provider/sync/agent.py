@@ -124,12 +124,18 @@ class SyncThread(QtCore.QThread):
     # Setup database - tools.py    
     def _init_db(self):
         """Init database"""
+        
+        self.app.log("Execute _init_db")
+        
         self.session = tools.get_db_session()
 
     # Initialize Network
     # Get get_auth_token get_note_store get_user_store - tools.py
     def _init_network(self):
         """Init connection to remote server"""
+        
+        self.app.log("Execute _init_network")        
+        
         while True:
             try:
                 self.auth_token = tools.get_auth_token()
@@ -154,6 +160,8 @@ class SyncThread(QtCore.QThread):
     # Setup Sync table with values and set status
     def _init_sync(self):
         """Init sync"""
+        
+        self.app.log("Execute _init_sync")
         
         # set status to None         
         self.status = const.STATUS_NONE
@@ -208,9 +216,11 @@ class SyncThread(QtCore.QThread):
     def _init_sync_state(self):
         """Init sync state"""
         
+        self.app.log("Execute _init_sync_state")
+        
         while True:
             try:
-                init_sync_state = note_store.getSyncState(self.auth_token)
+                init_sync_state = self.note_store.getSyncState(self.auth_token)
                 self.sync_state.srv_current_time = init_sync_state.currentTime 
                 self.sync_state.srv_fullSyncBefore = init_sync_state.fullSyncBefore 
                 self.sync_state.srv_update_count = init_sync_state.updateCount 
@@ -227,8 +237,18 @@ class SyncThread(QtCore.QThread):
                     # until the rate limit clears
                     time.sleep(e.rateLimitDuration)
                     self.status = const.STATUS_NONE        
-        
-        
+            except socket.error, e:
+                # MKG: I want to track connect errors
+                self.sync_state.connect_error_count+=1
+                self.app.log(
+                    "Couldn't connect to remote server. Got: %s" %
+                    traceback.format_exc())
+                self.app.log(
+                    "Total connect errors: %d" % self.sync_state.connect_error_count)
+                # This is most likely a network failure. Return False so
+                # everpad-provider won't lock up and can try to sync up in the
+                # next run.        
+
 
     # ***** reimplement PySide.QtCore.QThread.run() *****
     #
@@ -245,14 +265,9 @@ class SyncThread(QtCore.QThread):
         self._init_db()         # setup database
         self._init_sync()       # setup Sync table times
         self._init_network()    # get evernote info
-        
-        
-        # @@@@ I want to do some other start up checks/calls here
-        # ie ... is this a virgin/do I need a full sync (offset) ...
-        
+        self._init_sync_state() # get server sync state info
 
-        # Deprecated since version 2.6: 
-        # The mutex module has been removed in Python 3.
+        # Note: Deprecated since version 2.6: mutex module removed in Python 3.
         while True:
             self.mutex.lock()
             self.wait_condition.wait(self.mutex)
@@ -264,6 +279,7 @@ class SyncThread(QtCore.QThread):
             
             # sleep 1 second
             time.sleep(1)  # prevent cpu eating
+            
     # ********** end main running loop **************
 
     # ********** Working Routines **********
@@ -272,7 +288,8 @@ class SyncThread(QtCore.QThread):
     #
     def perform(self):
         """Perform all sync"""
-        self.app.log("Performing sync perform( )")
+        
+        self.app.log("Execute perform( )")
         
         # set status to sync
         self.status = const.STATUS_SYNC
@@ -330,7 +347,9 @@ class SyncThread(QtCore.QThread):
 
     def _need_to_update(self):
         """Check need for update notes"""
-        self.app.log('Checking need for update notes.')
+
+        self.app.log("Execute _need_to_update")
+
         # Try to update_count.
         
         # okay get a RATE_LIMIT_REACHED on an initial sync
@@ -409,6 +428,7 @@ class SyncThread(QtCore.QThread):
     # Send all changes to server (evernote) 
     def local_changes(self):
         """Send local changes to evernote server"""
+
         self.app.log('Running local_changes()')
 
         # Notebooks
@@ -427,6 +447,7 @@ class SyncThread(QtCore.QThread):
     # Get all changes from server (evernote) 
     def remote_changes(self):
         """Receive remote changes from evernote"""
+
         self.app.log('Running remote_changes()')
         
         # Notebooks
