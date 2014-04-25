@@ -6,11 +6,11 @@ Most of the documentation at https://github.com/nvbn/everpad is still valid as f
 
 I use only Gentoo with Gnome, so it might not work on another distro.  Given this, I emerged the following packages:
 
-dev-python/beautifulsoup 
+dev-python/beautifulsoup
 dev-python/html2text 
 dev-python/httplib2 
 dev-python/keyring 
-dev-python/oauth2 
+dev-python/oauth2
 dev-python/pyrex 
 dev-python/sqlalchemy 
 dev-python/dbus-python  
