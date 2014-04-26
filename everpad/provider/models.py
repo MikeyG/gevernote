@@ -285,7 +285,7 @@ class Notebook(Base):
     def from_api(self, notebook):
         """Fill data from api"""
         self.name = notebook.name.decode('utf8')
-        self.usn = notebook.usn
+        self.usn = notebook.updateSequenceNum
         self.default = notebook.defaultNotebook
         self.service_created = notebook.serviceCreated
         self.service_updated = notebook.serviceUpdated
