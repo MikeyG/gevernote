@@ -296,9 +296,9 @@ class SyncThread(QtCore.QThread):
         self.app.log("Local account updates count:  %s" % self.sync_state.update_count)
         self.app.log("Remote account updates count: %s" % self.sync_state.srv_update_count)        
 
-"""        
+        """        
         need_to_update = self._need_to_update()
-"""
+        """
         try:
             if need_to_update:
                 self.remote_changes()
@@ -335,10 +335,9 @@ class SyncThread(QtCore.QThread):
         self.data_changed.emit()
         self.app.log("Sync performed.")
 
-"""
-    def _need_to_update(self):
-        """Check need for update notes"""
-
+#    def _need_to_update(self):
+#        """Check need for update notes"""
+        """
         self.app.log("Execute _need_to_update")
 
         # Try to update_count.
@@ -394,7 +393,7 @@ class SyncThread(QtCore.QThread):
         # self.sync_state.update_count = 1
 
         return reason
-"""
+        """
 
     # *** Get Server Sync State
     # Sync table with current sync status

@@ -82,7 +82,7 @@ class PullTag(BaseSync):
     def pull(self):
         """Pull tags from server"""
         
-"""
+        """
         # need to vary this for full and inc
         # I want this to be 0 for full sync and
         # start usn for inc sync
@@ -120,7 +120,7 @@ class PullTag(BaseSync):
                 break
             else:
                 self.sync_start_usn = self.tag_chunk.chunkHighUSN + 1
-"""
+        """
 
         for tag_ttype in self.note_store.listTags(self.auth_token):
             
