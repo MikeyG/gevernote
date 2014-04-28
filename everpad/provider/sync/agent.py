@@ -10,6 +10,8 @@ import time
 import traceback
 import socket
 
+from .base import SyncStatus
+
 """
     Rate Limit handling:
     1.  If provider starts in a Rate Limit period, it will be caught 
@@ -21,6 +23,8 @@ import socket
         then sleep until clear.
 
 """
+
+#sync_info = SyncStatus( )
 
 # ********** SyncThread **********
 # 
@@ -35,7 +39,7 @@ class SyncThread(QtCore.QThread):
     force_sync_signal = QtCore.Signal()
     sync_state_changed = QtCore.Signal(int)
     data_changed = QtCore.Signal()
-
+    
     def __init__(self, *args, **kwargs):
         """Init default values"""
         
@@ -205,19 +209,21 @@ class SyncThread(QtCore.QThread):
             self.sync_state = models.Sync(
                 update_count=0, 
                 last_sync=0,
-                virgin_db=1,
-                rate_limit=0,
-                rate_limit_time=0,
-                connect_error_count=0)
+                virgin_db=1
+            )
             # update Sync table
             self.session.add(self.sync_state)
             self.session.commit()
-        else:
-            # MKG: zero my play values
-            self.sync_state.rate_limit=0
-            self.sync_state.rate_limit_time=0
-            self.sync_state.connect_error_count=0
-            self.session.commit()
+        
+        SyncStatus.rate_limit = 0
+   
+       
+       # else:
+       #     # MKG: zero my play values
+       #     self.sync_state.rate_limit=0
+       #     self.sync_state.rate_limit_time=0
+       #     self.sync_state.connect_error_count=0
+       #     self.session.commit()
 
     # ***** reimplement PySide.QtCore.QThread.run() *****
     #
@@ -260,6 +266,7 @@ class SyncThread(QtCore.QThread):
             self.app.log("RateLimit early perform( ) - sleeping")
             self.status = const.STATUS_RATE
             time.sleep(self.sync_state.rate_limit_time)
+            
             # clear rate limit
             self.sync_state.rate_limit = 0
             self.sync_state.rate_limit_time = 0

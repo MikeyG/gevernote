@@ -7,10 +7,11 @@ from evernote.edam.type import ttypes
 from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
 from ... import const
 from .. import models
-from .base import BaseSync
+from .base import BaseSync, SyncStatus
 import time
 import binascii
 
+#from .agent import sync_info
 
 # ****** Note:  BaseSync - Base class for sync - base.py
 
@@ -189,9 +190,8 @@ class PushNote(BaseSync, ShareNoteMixin):
             self.note_store.updateNote(self.auth_token, note_ttype)
         except EDAMSystemException, e:
             if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-                self.app.log("Rate limit reached: %d seconds" % e.rateLimitDuration)
+                self.app.log("Rate limit _push_changed_note: %d seconds" % e.rateLimitDuration)
                 self.sync_state.rate_limit = e.rateLimitDuration
-                self.sync_state.rate_limit_time = datetime.now() + datetime.timedelta(seconds=e.rateLimitDuration)
         except EDAMUserException as e:
             self.app.log('Push changed note "%s" failed.' % note.title)
             self.app.log(note_ttype)
@@ -209,9 +209,8 @@ class PushNote(BaseSync, ShareNoteMixin):
             self.note_store.deleteNote(self.auth_token, note_ttype.guid)
         except EDAMSystemException, e:
             if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-                self.app.log("Rate limit reached: %d seconds" % e.rateLimitDuration)
+                self.app.log("Rate limit _delete_note: %d seconds" % e.rateLimitDuration)
                 self.sync_state.rate_limit = e.rateLimitDuration
-                self.sync_state.rate_limit_time = datetime.now() + datetime.timedelta(seconds=e.rateLimitDuration)
         except EDAMUserException as e:
             self.app.log('Note %s already removed' % note.title)
             self.app.log(e)
@@ -232,6 +231,9 @@ class PullNote(BaseSync, ShareNoteMixin):
     def pull(self):
         """Pull notes from remote server"""
 
+        self.app.log("SyncStatus %d" % SyncStatus.rate_limit)
+        SyncStatus.rate_limit = 0 
+        
         # okay, so _get_all_notes uses a generator to yield each note
         # one at a time - great leap for a python dummy such as myself
         # _get_all_notes using findNotesMetadata returns NotesMetadataList
@@ -240,7 +242,7 @@ class PullNote(BaseSync, ShareNoteMixin):
             # If no title returns "Untitled note"
             self.app.log(
                 'Pulling note "%s" from remote server.' % note_meta_ttype.title)
-         
+            
             # note_ttype is a NotesMetadataList -> NoteMetadata (notes)
             # structure of the note
             
@@ -274,13 +276,6 @@ class PullNote(BaseSync, ShareNoteMixin):
             except NoResultFound:
                 note, note_full_ttype = self._create_note(note_meta_ttype)
                 
-            self.app.log(note_meta_ttype.guid)
-            if note_full_ttype != None:
-                self.app.log(note_full_ttype.guid)
-            else:
-                self.app.log("Full note not pulled")	
-
-            
             # At this point note is the note as defind in models.py
             self._exists.append(note.id)
             
@@ -294,14 +289,13 @@ class PullNote(BaseSync, ShareNoteMixin):
             if resource_ids:
                  self._remove_resources(note, resource_ids)
 
-        #@@@@ end of for note_meta_ttype in self._get_all_note        
+        #@@@@ end of for note_meta_ttype in self._get_all_note 
         
         # commit to local database
         self.session.commit()
 
         # remove unused notes
         self._remove_notes()
-
 
     # **************** Get All Notes ****************
     #
@@ -349,6 +343,7 @@ class PullNote(BaseSync, ShareNoteMixin):
                         "Rate limit in _get_all_notes: %d minutes" % 
                             (e.rateLimitDuration/60)
                     )
+                    SyncStatus.rate_limit = e.rateLimitDuration
                     break
 
             # https://www.jeffknupp.com/blog/2013/04/07/
@@ -399,15 +394,17 @@ class PullNote(BaseSync, ShareNoteMixin):
                 self.auth_token, note_ttype.guid,
                 True, True, True, True,
             )
+            return note_full_ttype
+        
         except EDAMSystemException, e:
             if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
                 self.app.log(
                     "Rate limit _get_full_note: %d minutes" % 
                         (e.rateLimitDuration/60)
                 )
-                self.sync_state.rate_limit = e.rateLimitDuration        
-        
-        return note_full_ttype
+                SyncStatus.rate_limit = e.rateLimitDuration
+                
+                return None
 
 
     # **************** Get Resource Data ****************
@@ -432,12 +429,12 @@ class PullNote(BaseSync, ShareNoteMixin):
                     "Rate limit _get_resource_data: %d minutes" % 
                         (e.rateLimitDuration/60)
                 )
-                self.sync_state.rate_limit = e.rateLimitDuration
+                SyncStatus.rate_limit = e.rateLimitDuration
                 return
 
         with open(resource.file_path, 'w') as data:
             data.write(data_body)
-            
+
 
     # **************** Create Note ****************
     #
@@ -453,8 +450,11 @@ class PullNote(BaseSync, ShareNoteMixin):
         # returns Types.Note with Note content, binary contents 
         # of the resources and their recognition data will be omitted
         note_full_ttype = self._get_full_note(note_meta_ttype)
-
-        # !!!!! Rate Limit handle
+        
+        if SyncStatus.rate_limit:
+            note = None            
+            note_full_ttype = None
+            return
         
         # So now I understand the continued use of note_ttype
         # if it gets to create then missing info is ADDED to 
@@ -502,6 +502,11 @@ class PullNote(BaseSync, ShareNoteMixin):
             
             # get full note
             note_full_ttype = self._get_full_note(note_ttype)
+            
+            if SyncStatus.rate_limit:
+                note = None            
+                note_full_ttype = None
+                return note, note_full_ttype
             
             # conflict because the server note is newer than
             # the local note in addition the local note has changed            
@@ -575,11 +580,14 @@ class PullNote(BaseSync, ShareNoteMixin):
         # empty resource id list        
         resources_ids = []
         
-        # !!!!! need work here        
+        # !!!!! need work here - until I start using SyncChunk here is a 
+        # rough way to get resources        
         if note_meta_ttype.largestResourceSize or note_full_ttype == None:
             # get full note
             note_full_ttype = self._get_full_note(note_meta_ttype)
-
+            if SyncStatus.rate_limit:
+                return resources_ids 
+                
         # Update note resources in database and download or delete
         # actual binary data?  See resource.from_api in models.py
         

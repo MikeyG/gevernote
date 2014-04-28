@@ -11,3 +11,17 @@ class BaseSync(object):
         self.note_store = note_store
         self.user_store = user_store
         self.app = AppClass.instance()
+
+class SyncStatus(object):
+
+    """Sync Status"""
+    rate_limit = 0
+    connect_error_count = 0
+
+       
+
+    	
+    	
+
+ 
+

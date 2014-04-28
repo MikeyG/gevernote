@@ -5,7 +5,7 @@ from evernote.edam.type import ttypes
 from ... import const
 from ..exceptions import TTypeValidationFailed
 from .. import models
-from .base import BaseSync
+from .base import BaseSync, SyncStatus
 import regex
 
 
@@ -125,12 +125,12 @@ class PullNotebook(BaseSync):
 
     def pull(self):
         """Receive notebooks from server"""
-        
+                
         # request and return all notebooks in Notebook structure
         for notebook_ttype in self.note_store.listNotebooks(self.auth_token):
             self.app.log(
                 'Pulling notebook "%s" from remote server.' % notebook_ttype.name)
-            
+
             try:
                 notebook = self._update_notebook(notebook_ttype)
             except NoResultFound:

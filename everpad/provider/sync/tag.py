@@ -5,7 +5,7 @@ from evernote.edam.type import ttypes
 from ... import const
 from ..exceptions import TTypeValidationFailed
 from .. import models
-from .base import BaseSync
+from .base import BaseSync, SyncStatus
 import regex
 
 # ****** Contains:
@@ -81,7 +81,7 @@ class PullTag(BaseSync):
 
     def pull(self):
         """Pull tags from server"""
-        
+
         """
         # need to vary this for full and inc
         # I want this to be 0 for full sync and
