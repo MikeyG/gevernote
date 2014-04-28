@@ -231,14 +231,15 @@ class PullNote(BaseSync, ShareNoteMixin):
     def pull(self):
         """Pull notes from remote server"""
 
-        self.app.log("SyncStatus %d" % SyncStatus.rate_limit)
-        SyncStatus.rate_limit = 0 
-        
         # okay, so _get_all_notes uses a generator to yield each note
         # one at a time - great leap for a python dummy such as myself
         # _get_all_notes using findNotesMetadata returns NotesMetadataList
         for note_meta_ttype in self._get_all_notes():
             
+            # EEE Rate limit from _get_all_notes then break
+            if SyncStatus.rate_limit:
+                break
+
             # If no title returns "Untitled note"
             self.app.log(
                 'Pulling note "%s" from remote server.' % note_meta_ttype.title)
@@ -271,10 +272,19 @@ class PullNote(BaseSync, ShareNoteMixin):
             #                          _create_conflict
             #
             
+            
+            # @@@@@@@@@ What if I get a half done note?????? ie no sharing resources
+            
             try:
                 note, note_full_ttype = self._update_note(note_meta_ttype)
+                # EEE Rate limit from _update_note then break
+                if SyncStatus.rate_limit:
+                    break
             except NoResultFound:
                 note, note_full_ttype = self._create_note(note_meta_ttype)
+                # EEE Rate limit from _create_note then break
+                if SyncStatus.rate_limit:
+                    break
                 
             # At this point note is the note as defind in models.py
             self._exists.append(note.id)
@@ -288,6 +298,8 @@ class PullNote(BaseSync, ShareNoteMixin):
             
             if resource_ids:
                  self._remove_resources(note, resource_ids)
+                 
+            #SyncStatus.rate_limit
 
         #@@@@ end of for note_meta_ttype in self._get_all_note 
         
@@ -303,6 +315,9 @@ class PullNote(BaseSync, ShareNoteMixin):
         """Iterate all notes"""
         
         self.app.log("get_all_notes")
+        
+        
+        # when I swap to syncchumk offset has to vary for full or inc sync
         offset = 0
 
         # Function: NoteStore.findNotes - DEPRECATED. Use findNotesMetadata
@@ -336,7 +351,7 @@ class PullNote(BaseSync, ShareNoteMixin):
                         includeLargestResourceSize=True,
                     )
                 )
-            # if a rate limit happens because of findNotesMetadata
+            # EEE if a rate limit happens because of findNotesMetadata
             except EDAMSystemException, e:
                 if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
                     self.app.log(
@@ -373,20 +388,13 @@ class PullNote(BaseSync, ShareNoteMixin):
         
         # #################  end while True  ################# 
 
-
     # **************** Get Full Note ****************
     #
     # Get the note data from API and return it
+    # Could get Rate Limit calling GetNote
     def _get_full_note(self, note_ttype):
         """Get full note"""
         
-        # Types.Note getNote(string authenticationToken,
-        #           Types.Guid guid,
-        #           bool withContent,
-        #           bool withResourcesData,
-        #           bool withResourcesRecognition,
-        #           bool withResourcesAlternateData)
-        # NOTE!!! service will include the meta-data for each 
         # resource in the note, but the binary contents of the resources 
         # and their recognition data will be omitted
         try:
@@ -406,20 +414,16 @@ class PullNote(BaseSync, ShareNoteMixin):
                 
                 return None
 
-
     # **************** Get Resource Data ****************
     #
     # Get the note data from API and return it
-    # MKG: Verified this works 12Apr14
-    # -- need some error coding
-    # 
+    # Could get Rate Limit calling getResourceData
     def _get_resource_data(self, resource):
         """Get resource data"""
         
         # string getResourceData(
         #         string authenticationToken,
         #         Types.Guid guid)
-        
         try:
             data_body = self.note_store.getResourceData(
                 self.auth_token, resource.guid)
@@ -434,7 +438,6 @@ class PullNote(BaseSync, ShareNoteMixin):
 
         with open(resource.file_path, 'w') as data:
             data.write(data_body)
-
 
     # **************** Create Note ****************
     #
