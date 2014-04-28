@@ -216,14 +216,6 @@ class SyncThread(QtCore.QThread):
             self.session.commit()
         
         SyncStatus.rate_limit = 0
-   
-       
-       # else:
-       #     # MKG: zero my play values
-       #     self.sync_state.rate_limit=0
-       #     self.sync_state.rate_limit_time=0
-       #     self.sync_state.connect_error_count=0
-       #     self.session.commit()
 
     # ***** reimplement PySide.QtCore.QThread.run() *****
     #
@@ -302,9 +294,6 @@ class SyncThread(QtCore.QThread):
         self.app.log("Local account updates count:  %s" % self.sync_state.update_count)
         self.app.log("Remote account updates count: %s" % self.sync_state.srv_update_count)        
 
-        """        
-        need_to_update = self._need_to_update()
-        """
         try:
             if need_to_update:
                 self.remote_changes()
@@ -348,65 +337,6 @@ class SyncThread(QtCore.QThread):
         # self.data_changed.emit()
         # self.app.log("Sync performed.")
 
-#    def _need_to_update(self):
-#        """Check need for update notes"""
-        """
-        self.app.log("Execute _need_to_update")
-
-        # Try to update_count.
-        
-        # okay get a RATE_LIMIT_REACHED on an initial sync
-        # http://dev.evernote.com/doc/articles/rate_limits.php
-        # getSyncState - updateCount -The total number of updates that have been 
-        # performed in the service for this account. This is equal to the 
-        # highest USN within the account at the point that this SyncChunk was 
-        # generated. If updateCount and chunkHighUSN are identical, that means 
-        # that this is the last chunk in the account ... there is no more recent information. 
-        try:
-            self.sync_state.srv_update_count = self.note_store.getSyncState(
-                self.auth_token).updateCount
-        except EDAMSystemException, e:
-            if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-                self.app.log(
-                    "Rate limit _need_to_update: %d minutes - sleeping" % 
-                        (e.rateLimitDuration/60)
-                )
-                self.status = const.STATUS_RATE
-                # nothing I can think of doing other than sleeping here
-                # until the rate limit clears and retry
-                time.sleep(e.rateLimitDuration)
-                self.status = const.STATUS_SYNC
-                update_count = self.note_store.getSyncState(
-                    self.auth_token).updateCount
-        except socket.error, e:
-            # MKG: I want to track connect errors
-            self.sync_state.connect_error_count+=1
-            self.app.log(
-                "Couldn't connect to remote server. Got: %s" %
-                traceback.format_exc())
-            self.app.log(
-                "Total connect errors: %d" % self.sync_state.connect_error_count)
-            # This is most likely a network failure. Return False so
-            # everpad-provider won't lock up and can try to sync up in the
-            # next run.
-            return False
-            
-        # Remember - don't get here if there was a problem
-        
-        #XXX: matsubara probably innefficient as it does a SQL each time it
-        # accesses the update_count attr?
-        self.app.log("Local account updates count:  %s" % self.sync_state.update_count)
-        self.app.log("Remote account updates count: %s" % self.sync_state.srv_update_count)
-
-        # true if an update and false if no update needed
-        reason = self.sync_state.srv_update_count != self.sync_state.update_count
-        
-        #@@@@ MOVED okay --- work here do I really want to update before I'm done?
-        # self.sync_state.update_count = update_count -- temp:
-        # self.sync_state.update_count = 1
-
-        return reason
-        """
 
     # *** Get Server Sync State
     # Sync table with current sync status
