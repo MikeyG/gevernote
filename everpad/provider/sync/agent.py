@@ -262,14 +262,13 @@ class SyncThread(QtCore.QThread):
         self.app.log("Execute perform( )")
 
         # A good place to check and wait if rate limited
-        if self.sync_state.rate_limit:
+        if SyncStatus.rate_limit:
             self.app.log("RateLimit early perform( ) - sleeping")
             self.status = const.STATUS_RATE
-            time.sleep(self.sync_state.rate_limit_time)
+            time.sleep(SyncStatus.rate_limit)
             
             # clear rate limit
-            self.sync_state.rate_limit = 0
-            self.sync_state.rate_limit_time = 0
+            SyncStatus.rate_limit = 0
 
         # set status to sync
         self.status = const.STATUS_SYNC
@@ -330,7 +329,7 @@ class SyncThread(QtCore.QThread):
                 self.session.rollback()
                 self._init_db()
                 self.status = const.STATUS_RATE
-                time.sleep(e.rateLimitDuration)
+                SyncStatus.rate_limit = e.rateLimitDuration)
                 self.status = const.STATUS_NONE            
         
         except Exception, e:  # maybe log this
