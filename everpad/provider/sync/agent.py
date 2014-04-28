@@ -138,7 +138,6 @@ class SyncThread(QtCore.QThread):
         """Init database"""
         
         self.app.log("Execute _init_db")
-        
         self.session = tools.get_db_session()
 
     # Initialize Network
@@ -209,12 +208,12 @@ class SyncThread(QtCore.QThread):
             self.sync_state = models.Sync(
                 update_count=0, 
                 last_sync=0,
-                virgin_db=1
             )
             # update Sync table
             self.session.add(self.sync_state)
             self.session.commit()
         
+        # set the rate limit indication to 0
         SyncStatus.rate_limit = 0
 
     # ***** reimplement PySide.QtCore.QThread.run() *****
@@ -336,7 +335,6 @@ class SyncThread(QtCore.QThread):
 
         # self.data_changed.emit()
         # self.app.log("Sync performed.")
-
 
     # *** Get Server Sync State
     # Sync table with current sync status
