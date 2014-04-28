@@ -613,6 +613,9 @@ class PullNote(BaseSync, ShareNoteMixin):
                 ):
                     resource.from_api(resource_ttype)
                     self._get_resource_data(resource)
+                    if SyncStatus.rate_limit:
+                        break 
+
                     #@@@@ do I need session.commit() here????
                     # I put it here for now
                     self.session.commit()
@@ -626,6 +629,8 @@ class PullNote(BaseSync, ShareNoteMixin):
                 )
                 resource.from_api(resource_ttype)
                 self._get_resource_data(resource)
+                    if SyncStatus.rate_limit:
+                        break 
                 
                 self.session.add(resource)
                 self.session.commit()
