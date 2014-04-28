@@ -313,7 +313,14 @@ class SyncThread(QtCore.QThread):
             
             # if we get a good finish - update the count to match server
             self.sync_state.update_count = self.sync_state.srv_update_count
-
+            
+            self.sync_state.last_sync = datetime.now( )
+            self.data_changed.emit()
+            
+            self.app.log("Sync performed.")
+            
+            # Well sync should be done - I hope
+            
         except EDAMSystemException, e:
             if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
                 self.app.log(
@@ -337,10 +344,10 @@ class SyncThread(QtCore.QThread):
             self.all_notes = None
 
         # check - should not set if error
-        self.sync_state.last_sync = datetime.now( )
+        # self.sync_state.last_sync = datetime.now( )
 
-        self.data_changed.emit()
-        self.app.log("Sync performed.")
+        # self.data_changed.emit()
+        # self.app.log("Sync performed.")
 
 #    def _need_to_update(self):
 #        """Check need for update notes"""
