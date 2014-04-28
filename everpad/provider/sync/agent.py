@@ -285,7 +285,7 @@ class SyncThread(QtCore.QThread):
             need_to_update = True
         elif self.sync_state.update_count < self.sync_state.srv_update_count:
             # Do incremental sync
-            self.app.log("fullSyncBefore sync")
+            self.app.log("increment sync")
             need_to_update = True
         else:
             self.app.log("local only sync")
@@ -377,7 +377,6 @@ class SyncThread(QtCore.QThread):
                 # everpad-provider won't lock up and can try to sync up in the
                 # next run.        
 
-    
     # *** Force Sync ***
     def force_sync(self):
         """Start sync"""
