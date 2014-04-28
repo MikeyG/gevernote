@@ -11,9 +11,9 @@ from .base import BaseSync, SyncStatus
 import time
 import binascii
 
-#from .agent import sync_info
 
-# ****** Note:  BaseSync - Base class for sync - base.py
+# ****** Note:  BaseSync, SyncStatus 
+#        Base class for sync - base.py
 
 # *************************************************
 # **************** ShareNoteMixin  ****************
