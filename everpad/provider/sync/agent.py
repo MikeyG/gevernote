@@ -82,24 +82,6 @@ class SyncThread(QtCore.QThread):
         # call update_timer to set time and start
         self.update_timer()
 
-   # *** End Initialize Timer
-
-    # *** Initialize Locks
-    # PySide
-    # self.wait_condition and self.mutex
-    def _init_locks(self):
-        """Init locks"""
-        
-        # provides a condition variable for synchronizing threads
-        # http://srinikom.github.io/pyside-docs/PySide/QtCore/QWaitCondition.html
-        self.wait_condition = QtCore.QWaitCondition()
-        
-        # class provides access serialization between threads
-        # http://srinikom.github.io/pyside-docs/PySide/QtCore/QMutex.html
-        self.mutex = QtCore.QMutex()
-
-   # *** End Initialize Locks
-
     # *** Update Timer
     # Stop the timmer, Set the timer delay to user settings,
     # default value, or nothing if manual. Finally, start the timer.
@@ -122,8 +104,20 @@ class SyncThread(QtCore.QThread):
         # then start the timer - seconds
         if delay != const.SYNC_MANUAL:
             self.timer.start(delay)
-            
-   # *** End Update Timer
+
+    # *** Initialize Locks
+    # PySide
+    # self.wait_condition and self.mutex
+    def _init_locks(self):
+        """Init locks"""
+        
+        # provides a condition variable for synchronizing threads
+        # http://srinikom.github.io/pyside-docs/PySide/QtCore/QWaitCondition.html
+        self.wait_condition = QtCore.QWaitCondition()
+        
+        # class provides access serialization between threads
+        # http://srinikom.github.io/pyside-docs/PySide/QtCore/QMutex.html
+        self.mutex = QtCore.QMutex()
 
     # **************************************************************
     # *                                                            *
@@ -140,40 +134,6 @@ class SyncThread(QtCore.QThread):
         self.app.log("Execute _init_db")
         self.session = tools.get_db_session()
 
-    # Initialize Network
-    # Get get_auth_token get_note_store get_user_store - tools.py
-    def _init_network(self):
-        """Init connection to remote server"""
-        
-        self.app.log("Execute _init_network")        
-        
-        while True:
-            try:
-                self.auth_token = tools.get_auth_token()
-                self.note_store = tools.get_note_store(self.auth_token)
-                self.user_store = tools.get_user_store(self.auth_token)
-                break
-            except EDAMSystemException, e:
-                if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-                    self.app.log(
-                        "Rate limit _init_network: %d minutes - sleeping" % 
-                        (e.rateLimitDuration/60)
-                    )
-                    self.status = const.STATUS_RATE
-                    # nothing I can think of doing other than sleeping here
-                    # until the rate limit clears
-                    time.sleep(e.rateLimitDuration)
-                    self.status = const.STATUS_NONE
-            except socket.error, e:
-                self.app.log(
-                    "Couldn't connect to remote server. Got: %s" %
-                        traceback.format_exc()
-                )
-                self.sync_state.connect_error_count+=1
-                self.app.log(
-                    "Total connect errors: %d" % self.sync_state.connect_error_count)
-                time.sleep(30)
-                
     # *** Initialize Sync
     # Setup Sync table with values and set status
     def _init_sync(self):
@@ -215,7 +175,41 @@ class SyncThread(QtCore.QThread):
         
         # set the rate limit indication to 0
         SyncStatus.rate_limit = 0
-
+        
+    # Initialize Network
+    # Get get_auth_token get_note_store get_user_store - tools.py
+    def _init_network(self):
+        """Init connection to remote server"""
+        
+        self.app.log("Execute _init_network")        
+        
+        while True:
+            try:
+                self.auth_token = tools.get_auth_token()
+                self.note_store = tools.get_note_store(self.auth_token)
+                self.user_store = tools.get_user_store(self.auth_token)
+                break
+            except EDAMSystemException, e:
+                if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
+                    self.app.log(
+                        "Rate limit _init_network: %d minutes - sleeping" % 
+                        (e.rateLimitDuration/60)
+                    )
+                    self.status = const.STATUS_RATE
+                    # nothing I can think of doing other than sleeping here
+                    # until the rate limit clears
+                    time.sleep(e.rateLimitDuration)
+                    self.status = const.STATUS_NONE
+            except socket.error, e:
+                self.app.log(
+                    "Couldn't connect to remote server. Got: %s" %
+                        traceback.format_exc()
+                )
+                self.sync_state.connect_error_count+=1
+                self.app.log(
+                    "Total connect errors: %d" % self.sync_state.connect_error_count)
+                time.sleep(30)
+                
     # ***** reimplement PySide.QtCore.QThread.run() *****
     #
     # This is the main loop of the thread
@@ -270,7 +264,7 @@ class SyncThread(QtCore.QThread):
         # update server sync info
         self._get_sync_state()
         
-        # temp:
+        # temp:  --- just setting to true for testing MKG 042814
         force_sync = 1
         
         if force_sync:
@@ -290,6 +284,7 @@ class SyncThread(QtCore.QThread):
             self.app.log("local only sync")
             need_to_update = False
  
+        # USN stats to log
         self.app.log("Local account updates count:  %s" % self.sync_state.update_count)
         self.app.log("Remote account updates count: %s" % self.sync_state.srv_update_count)        
 
@@ -387,11 +382,24 @@ class SyncThread(QtCore.QThread):
         """Do sync"""
         self.wait_condition.wakeAll()
 
-    # ******** Sync Args *********
-    # get sync args for local_changes and remote_changes
-    def _get_sync_args(self):
-        """Get sync arguments"""
-        return self.auth_token, self.session, self.note_store, self.user_store
+    # ******** Process Remote Changes *********
+    # Get all changes from server (evernote) 
+    def remote_changes(self):
+        """Receive remote changes from evernote"""
+
+        self.app.log('Running remote_changes()')
+        
+        # Notebooks
+        self.sync_state_changed.emit(const.SYNC_STATE_NOTEBOOKS_REMOTE)
+        notebook.PullNotebook(*self._get_sync_args()).pull()
+        
+        # Tags
+        self.sync_state_changed.emit(const.SYNC_STATE_TAGS_REMOTE)
+        tag.PullTag(*self._get_sync_args()).pull()
+
+        # Notes and Resources
+        self.sync_state_changed.emit(const.SYNC_STATE_NOTES_REMOTE)
+        note.PullNote(*self._get_sync_args()).pull()
 
     # ******** Process Local Changes *********
     # Send all changes to server (evernote) 
@@ -411,22 +419,11 @@ class SyncThread(QtCore.QThread):
         # Notes and Resources
         self.sync_state_changed.emit(const.SYNC_STATE_NOTES_LOCAL)
         note.PushNote(*self._get_sync_args()).push()
-
-    # ******** Process Remote Changes *********
-    # Get all changes from server (evernote) 
-    def remote_changes(self):
-        """Receive remote changes from evernote"""
-
-        self.app.log('Running remote_changes()')
         
-        # Notebooks
-        self.sync_state_changed.emit(const.SYNC_STATE_NOTEBOOKS_REMOTE)
-        notebook.PullNotebook(*self._get_sync_args()).pull()
-        
-        # Tags
-        self.sync_state_changed.emit(const.SYNC_STATE_TAGS_REMOTE)
-        tag.PullTag(*self._get_sync_args()).pull()
+    # ******** Sync Args *********
+    # get sync args for local_changes and remote_changes
+    def _get_sync_args(self):
+        """Get sync arguments"""
+        return self.auth_token, self.session, self.note_store, self.user_store
 
-        # Notes and Resources
-        self.sync_state_changed.emit(const.SYNC_STATE_NOTES_REMOTE)
-        note.PullNote(*self._get_sync_args()).pull()
+
