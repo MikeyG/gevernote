@@ -73,14 +73,19 @@ class ProviderApp(AppClass):
         self.service.qobject.terminate.connect(self.terminate)
         
         # *****  Configure logger.
+        # https://docs.python.org/2/library/logging.html
         self.logger = logging.getLogger('everpad-provider')
+        
         self.logger.setLevel(logging.DEBUG)
+        
         fh = logging.FileHandler(
             os.path.expanduser('~/.everpad/logs/everpad-provider.log'))
         fh.setLevel(logging.DEBUG)
+        
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         fh.setFormatter(formatter)
+        
         self.logger.addHandler(fh)
         self.logger.debug('Provider started.')
 
