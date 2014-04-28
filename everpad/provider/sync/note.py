@@ -296,6 +296,13 @@ class PullNote(BaseSync, ShareNoteMixin):
             # Here is where we get the resources
             resource_ids = self._receive_resources(note, note_meta_ttype, note_full_ttype)
             
+            # EEE handle resource error 
+            if SyncStatus.rate_limit:
+                # okay, rate limit in resource pull - zero out last note update 
+                # so it can be pulled again on next pass --
+                note.updated = 0
+                break
+
             if resource_ids:
                  self._remove_resources(note, resource_ids)
                  
@@ -584,7 +591,9 @@ class PullNote(BaseSync, ShareNoteMixin):
         resources_ids = []
         
         # !!!!! need work here - until I start using SyncChunk here is a 
-        # rough way to get resources        
+        # rough way to get resources 
+        # @@@@ 042814 - This is very sucky.  I have to get full note until I swap to
+        # sync chunk to get resource attributes
         if note_meta_ttype.largestResourceSize or note_full_ttype == None:
             # get full note
             note_full_ttype = self._get_full_note(note_meta_ttype)
@@ -615,6 +624,7 @@ class PullNote(BaseSync, ShareNoteMixin):
                     resource_ttype.data.bodyHash,
                 ):
                     resource.from_api(resource_ttype)
+                    
                     self._get_resource_data(resource)
                     if SyncStatus.rate_limit:
                         break 
@@ -631,9 +641,10 @@ class PullNote(BaseSync, ShareNoteMixin):
                     note_id=note.id,
                 )
                 resource.from_api(resource_ttype)
+                
                 self._get_resource_data(resource)
-                    if SyncStatus.rate_limit:
-                        break 
+                if SyncStatus.rate_limit:
+                    break 
                 
                 self.session.add(resource)
                 self.session.commit()
