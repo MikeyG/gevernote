@@ -173,8 +173,10 @@ def main():
         # loop as the default for all new Connection or Bus instances
         # allows this script to receive DBus calls
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+        
         app = ProviderApp(args.verbose, sys.argv)
         app.exec_()
+    
     except IOError:
         print("geverpad-provider already running")
     except Exception as e:
