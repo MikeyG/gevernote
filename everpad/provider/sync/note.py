@@ -5,6 +5,7 @@ from evernote.edam.error.ttypes import EDAMUserException, EDAMSystemException, E
 from evernote.edam.limits import constants as limits
 from evernote.edam.type import ttypes
 from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
+from evernote.edam.notestore.ttypes import SyncChunk, SyncChunkFilter
 from ... import const
 from .. import models
 from .base import BaseSync, SyncStatus
@@ -230,7 +231,7 @@ class PullNote(BaseSync, ShareNoteMixin):
 
     def pull(self):
         """Pull notes from remote server"""
-
+        
         # okay, so _get_all_notes uses a generator to yield each note
         # one at a time - great leap for a python dummy such as myself
         # _get_all_notes using findNotesMetadata returns NotesMetadataList
@@ -322,7 +323,22 @@ class PullNote(BaseSync, ShareNoteMixin):
         """Iterate all notes"""
         
         self.app.log("get_all_notes")
-        
+
+        chunk_start = 0
+        chunk_end = maxEntries              
+
+        """        
+        while True:
+            try:
+                note_list = self.note_store.getFilteredSyncChunk(
+                    self.auth_token, 
+                    SyncChunkFilter(
+                        includeNotes=True,
+                        includeNoteResources=True,
+                        includeNoteAttributes=True,
+                    )
+                ) 
+        """        
         
         # when I swap to syncchumk offset has to vary for full or inc sync
         offset = 0

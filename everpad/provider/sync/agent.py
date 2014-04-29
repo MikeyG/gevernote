@@ -289,18 +289,25 @@ class SyncThread(QtCore.QThread):
         self.app.log("Remote account updates count: %s" % self.sync_state.srv_update_count)        
 
         try:
+            # Need a sync or update?            
             if need_to_update:
                 self.remote_changes()
-            self.local_changes()
+                
+            # If not rate limit then do local changes            
+            if not SyncStatus.rate_limit: 
+                self.local_changes()
             
             # if we get a good finish - update the count to match server
             self.sync_state.update_count = self.sync_state.srv_update_count
             
             self.sync_state.last_sync = datetime.now( )
             self.data_changed.emit()
-            
-            self.app.log("Sync performed.")
-            
+
+            if not SyncStatus.rate_limit:             
+                self.app.log("Sync performed.")
+            else:
+                self.app.log("Rate limit no full sync.") 
+                           
             # Well sync should be done - I hope
             
         except EDAMSystemException, e:
@@ -312,7 +319,7 @@ class SyncThread(QtCore.QThread):
                 self.session.rollback()
                 self._init_db()
                 self.status = const.STATUS_RATE
-                SyncStatus.rate_limit = e.rateLimitDuration)
+                SyncStatus.rate_limit = e.rateLimitDuration
                 self.status = const.STATUS_NONE            
         
         except Exception, e:  # maybe log this
