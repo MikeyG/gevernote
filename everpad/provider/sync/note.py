@@ -229,13 +229,13 @@ class PullNote(BaseSync, ShareNoteMixin):
         super(PullNote, self).__init__(*args, **kwargs)
         self._exists = []
 
-    def pull(self):
+    def pull(self, chunk_start_after, chunk_end):
         """Pull notes from remote server"""
         
         # okay, so _get_all_notes uses a generator to yield each note
         # one at a time - great leap for a python dummy such as myself
         # _get_all_notes using findNotesMetadata returns NotesMetadataList
-        for note_meta_ttype in self._get_all_notes():
+        for note_meta_ttype in self._get_all_notes(chunk_start_after, chunk_end):
             
             # EEE Rate limit from _get_all_notes then break
             if SyncStatus.rate_limit:
@@ -273,14 +273,12 @@ class PullNote(BaseSync, ShareNoteMixin):
             #                          _create_conflict
             #
             
-            
-            # @@@@@@@@@ What if I get a half done note?????? ie no sharing resources
-            
             try:
                 note, note_full_ttype = self._update_note(note_meta_ttype)
                 # EEE Rate limit from _update_note then break
                 if SyncStatus.rate_limit:
                     break
+                
             except NoResultFound:
                 note, note_full_ttype = self._create_note(note_meta_ttype)
                 # EEE Rate limit from _create_note then break
