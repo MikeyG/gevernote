@@ -220,10 +220,18 @@ class PushNote(BaseSync, ShareNoteMixin):
 class PullNote(BaseSync, ShareNoteMixin):
     """Pull notes"""
 
+    # Args:
+    #    self.auth_token, self.session, 
+    #    self.note_store, self.user_store
+    #
     def __init__(self, *args, **kwargs):
         super(PullNote, self).__init__(*args, **kwargs)
         self._exists = []
 
+    # chunk_start_after - from agent.py <remote_changes>
+    #    Low USN, Start sync after this USN - 0 == Full sync
+    # chunk_end - server high USN count
+    #
     def pull(self, chunk_start_after, chunk_end):
         """Pull notes from remote server"""
         
@@ -269,14 +277,14 @@ class PullNote(BaseSync, ShareNoteMixin):
             #
             
             try:
-                note, note_full_ttype = self._update_note(note_meta_ttype)
+                note = self._update_note(note_meta_ttype)
                 # EEE Rate limit from _update_note then break
                 if SyncStatus.rate_limit:
                     break
                 self.app.log("No update required")
                 
             except NoResultFound:
-                note, note_full_ttype = self._create_note(note_meta_ttype)
+                note = self._create_note(note_meta_ttype)
                 # EEE Rate limit from _create_note then break
                 if SyncStatus.rate_limit:
                     break
@@ -297,6 +305,7 @@ class PullNote(BaseSync, ShareNoteMixin):
                 # okay, rate limit in resource pull - zero out last note update 
                 # so it can be pulled again on next pass --
                 note.updated = 0
+                note.guid = 0
                 break
 
             if resource_ids:
@@ -391,13 +400,13 @@ class PullNote(BaseSync, ShareNoteMixin):
         if note.updated < note_meta_ttype.updated:
             
             # I have to get the full note
-            note_full_ttype = self._get_full_note(note_ttype)
+            note_full_ttype = self._get_full_note(note_meta_ttype)
             
-            # Catch Rate Limit and get out of _update_note
+            # EEE Catch Rate Limit and get out of _update_note
             if SyncStatus.rate_limit:
                 note = None            
                 note_full_ttype = None
-                return note, note_full_ttype
+                return note
             
             # conflict because the server note is newer than
             # the local note in addition the local note has changed            
@@ -407,14 +416,8 @@ class PullNote(BaseSync, ShareNoteMixin):
             else:
                 # else update database with new sever note
                 note.from_api(note_full_ttype, self.session)
-        
-        else:
-            # okay, hope this works.  If no update or conflict then,
-            # I believe, the query returned an error, but note_full_ttype
-            # needs to be set to None for the return
-            note_full_ttype = None
-        
-        return note, note_full_ttype
+
+        return note
 
     # **************** Create Conflict ****************
     #
@@ -478,7 +481,7 @@ class PullNote(BaseSync, ShareNoteMixin):
         self.session.add(note)
         self.session.commit()
 
-        return note, note_full_ttype
+        return note
 
     # **************** Remove Note ****************
     #
