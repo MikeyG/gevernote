@@ -529,25 +529,13 @@ class PullNote(BaseSync, ShareNoteMixin):
         # empty resource id list        
         resources_ids = []
         
-        # !!!!! need work here - until I start using SyncChunk here is a 
-        # rough way to get resources 
-        # @@@@ 042814 - This is very sucky.  I have to get full note until I swap to
-        # sync chunk to get resource attributes
-        if note_meta_ttype.largestResourceSize or note_full_ttype == None:
-            # get full note
-            note_full_ttype = self._get_full_note(note_meta_ttype)
-            if SyncStatus.rate_limit:
-                return resources_ids 
-                
-        # Update note resources in database and download or delete
-        # actual binary data?  See resource.from_api in models.py
-        
+        # For each resource (resource_ttype) in the current note's resource list 
         # try: looks in database for the resource guid, if
         # not found fall though to except.  If in the database, append to the 
         # list and check hash to verify the existing resource.  If the resource
         # has changed then update database --- !!! I also need to download it again !!!!
         # The except handles resources that do not exist.  
-        for resource_ttype in note_full_ttype.resources or []:
+        for resource_ttype in note_meta_ttype.resources or []:
             try:
                 # Is the resource in the database? If not then except NoResultFound  
                 resource = self.session.query(models.Resource).filter(
@@ -557,14 +545,16 @@ class PullNote(BaseSync, ShareNoteMixin):
                 # append resource id to list
                 resources_ids.append(resource.id)
 
-                # if resource changed (hash does not match) then
-                # re-get resource
+                # If the resource exists local has it changed (hash does not match)?
+                # If no then re-get resource
                 if resource.hash != binascii.b2a_hex(
                     resource_ttype.data.bodyHash,
                 ):
                     resource.from_api(resource_ttype)
                     
                     self._get_resource_data(resource)
+
+                    # EEE Get Rate Limit then break
                     if SyncStatus.rate_limit:
                         break 
 
@@ -582,6 +572,8 @@ class PullNote(BaseSync, ShareNoteMixin):
                 resource.from_api(resource_ttype)
                 
                 self._get_resource_data(resource)
+                
+                # EEE Get Rate Limit then break
                 if SyncStatus.rate_limit:
                     break 
                 
