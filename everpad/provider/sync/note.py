@@ -259,7 +259,7 @@ class PullNote(BaseSync, ShareNoteMixin):
             #        |             |----- Yes --- _get_full_note
             #        |             |                 |
             #   _get_full_note     |              local note
-            #                      |         ---- also changed
+            #                      No        ---- also changed
             #                      |         |            |
             #                      |         | Yes        | No
             #                      return    |            |
