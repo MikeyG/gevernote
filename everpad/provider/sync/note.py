@@ -278,12 +278,14 @@ class PullNote(BaseSync, ShareNoteMixin):
                 # EEE Rate limit from _update_note then break
                 if SyncStatus.rate_limit:
                     break
+                self.app.log("No update required")
                 
             except NoResultFound:
                 note, note_full_ttype = self._create_note(note_meta_ttype)
                 # EEE Rate limit from _create_note then break
                 if SyncStatus.rate_limit:
                     break
+                self.app.log("Note created")
                 
             # At this point note is the note as defind in models.py
             self._exists.append(note.id)
@@ -339,7 +341,7 @@ class PullNote(BaseSync, ShareNoteMixin):
                         includeNoteAttributes=True,
                     )
                 ) 
-            # EEE if a rate limit happens because of findNotesMetadata
+            # EEE if a rate limit happens 
             except EDAMSystemException, e:
                 if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
                     self.app.log(
@@ -438,15 +440,16 @@ class PullNote(BaseSync, ShareNoteMixin):
         # of the resources and their recognition data will be omitted
         note_full_ttype = self._get_full_note(note_meta_ttype)
         
+        # Note at this point:  
+        #    note_meta_ttype - data return from getFilteredSyncChunk
+        #    note_full_ttype - full note without resource binary
+        
+        # Catch Rate Limit and get out of _create_note
         if SyncStatus.rate_limit:
             note = None            
             note_full_ttype = None
             return
         
-        # So now I understand the continued use of note_ttype
-        # if it gets to create then missing info is ADDED to 
-        # note_ttype ... less resources binary info
-
         # Put note into local database
         #    ... create Note ORM with guid
         note = models.Note(guid=note_full_ttype.guid)
@@ -455,14 +458,9 @@ class PullNote(BaseSync, ShareNoteMixin):
         
         # ... commit note data
         self.session.add(note)
-        
         self.session.commit()
-       
-        # Is note the models.py version at this point?
-        # why yes it is - confused yet?
-        # does return note signal end of yield?
+
         return note, note_full_ttype
-        
 
     # **************** Update Note****************
     #
@@ -487,9 +485,10 @@ class PullNote(BaseSync, ShareNoteMixin):
         # if in database if ! const.ACTION_CHANGE
         if note.updated < note_meta_ttype.updated:
             
-            # get full note
+            # I have to get the full note
             note_full_ttype = self._get_full_note(note_ttype)
             
+            # Catch Rate Limit and get out of _update_note
             if SyncStatus.rate_limit:
                 note = None            
                 note_full_ttype = None
