@@ -319,61 +319,28 @@ class PullNote(BaseSync, ShareNoteMixin):
 
     # **************** Get All Notes ****************
     #
-    def _get_all_notes(self):
+    #  Uses getFilteredSyncChunk to pull Notes and Resource data
+    #  from the server and yield each note for processing.
+    #  chunk_start_after will be zero for a full sync and will
+    #  be the local store high USN for increment sync
+    #
+    def _get_all_notes(self, chunk_start_after, chunk_end):
         """Iterate all notes"""
         
         self.app.log("get_all_notes")
 
-        chunk_start = 0
-        chunk_end = maxEntries              
-
-        """        
         while True:
             try:
-                note_list = self.note_store.getFilteredSyncChunk(
-                    self.auth_token, 
+                sync_chunk = self.note_store.getFilteredSyncChunk(
+                    self.auth_token,
+                    chunk_start_after,
+                    chunk_end,
                     SyncChunkFilter(
                         includeNotes=True,
                         includeNoteResources=True,
                         includeNoteAttributes=True,
                     )
                 ) 
-        """        
-        
-        # when I swap to syncchumk offset has to vary for full or inc sync
-        offset = 0
-
-        # Function: NoteStore.findNotes - DEPRECATED. Use findNotesMetadata
-        # NotesMetadataList findNotesMetadata(string authenticationToken,
-        #                            NoteFilter filter,
-        #                            i32 offset,
-        #                            i32 maxNotes,
-        #                            NotesMetadataResultSpec resultSpec)
-        # throws Errors.EDAMUserException, Errors.EDAMSystemException, Errors.
-        #        EDAMNotFoundException
-
-        # From 0 (offset) to EDAM_USER_NOTES_MAX - return NotesMetadataList
-        #
-
-        while True:
-            try:
-                note_list = self.note_store.findNotesMetadata(
-                    self.auth_token, 
-                    NoteFilter(
-                        order=ttypes.NoteSortOrder.UPDATED,
-                        ascending=False,
-                    ), 
-                    offset, 
-                    limits.EDAM_USER_NOTES_MAX,
-                    NotesMetadataResultSpec(
-                        includeTitle=True,
-                        includeCreated = True,
-                        includeUpdated=True,
-                        includeDeleted=True,
-                        includeAttributes=True,
-                        includeLargestResourceSize=True,
-                    )
-                )
             # EEE if a rate limit happens because of findNotesMetadata
             except EDAMSystemException, e:
                 if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
@@ -387,27 +354,23 @@ class PullNote(BaseSync, ShareNoteMixin):
             # https://www.jeffknupp.com/blog/2013/04/07/
             #       improve-your-python-yield-and-generators-explained/
             # https://wiki.python.org/moin/Generators
-            # Each NotesMetadataList.notes is yielded (yield note) for 
+            # Each SyncChunk.notes is yielded (yield note) for 
             # create or update in pull()
-            for note in note_list.notes:
-                yield note
+            for srv_note in sync_chunk.notes:
+                yield srv_note
 
-            # inc offset: okay, since we start from offset 0 then startIndex
-            # should be 0 on first pass then add len(note_list.notes) which
-            # should be total number of notes we grab with the findNotesMetadata
-            # call, so offset will be our max notes grabbed this pass
-            offset = note_list.startIndex + len(note_list.notes)
-            
-            # this will be zero if all the notes were received from the 
-            # findNotesMetadata (totalNotes)
-            # I guess because API:
-            # "The service will return a set of notes that is no larger than this number, 
-            # but may return fewer notes if needed. The NoteList.totalNotes field in the 
-            # return value will indicate whether there are more values available after 
-            # the returned set."
-            # -- just in case findNotesMetadata does not return all on first call
-            if note_list.totalNotes - offset <= 0:
+            # Here chunkHighUSN is the highest USN returned by the current
+            # getFilteredSyncChunk call.  If chunkHighUSN == chunk_end then
+            # we have received all Note structures on the server so break.
+            # If chunkHighUSN != chunk_end then there is more to get so 
+            # chunk_start_after set to chunkHighUSN which will retrieve 
+            # starting at chunkHighUSN+1 to chunk_end when calling 
+            # getFilteredSyncChunk again - got it?
+            if sync_chunk.chunkHighUSN == chunk_end):
                 break
+            else:
+                chunk_start_after = sync_chunk.chunkHighUSN
+                
         
         # #################  end while True  ################# 
 
