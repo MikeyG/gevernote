@@ -50,7 +50,6 @@ class ShareNoteMixin(object):
         note.share_url = None
         self.session.commit()
 
-
 # *************************************************
 # ****************    Push Note    ****************
 # *************************************************
@@ -111,7 +110,6 @@ class PushNote(BaseSync, ShareNoteMixin):
         # commit changes to database
         self.session.commit()
 
-
     # **************** Create Note ****************
     #
     # note is a database note data structure
@@ -166,7 +164,6 @@ class PushNote(BaseSync, ShareNoteMixin):
 
         return str(soup)
 
-
     # **************** Push Note ****************
     #
     def _push_new_note(self, note, note_ttype):
@@ -181,7 +178,6 @@ class PushNote(BaseSync, ShareNoteMixin):
             self.app.log(e)
         finally:
             note.action = const.ACTION_NONE
-
 
     # **************** Create Note ****************
     #
@@ -201,7 +197,6 @@ class PushNote(BaseSync, ShareNoteMixin):
         finally:
             note.action = const.ACTION_NONE
 
-
     # **************** Delete Note ****************
     #
     def _delete_note(self, note, note_ttype):
@@ -218,10 +213,10 @@ class PushNote(BaseSync, ShareNoteMixin):
         finally:
             self.session.delete(note)
 
-
 # *************************************************
 # ****************    Pull Note    ****************
 # *************************************************
+#
 class PullNote(BaseSync, ShareNoteMixin):
     """Pull notes"""
 
@@ -295,7 +290,7 @@ class PullNote(BaseSync, ShareNoteMixin):
             self._check_sharing_information(note, note_meta_ttype)
             	            
             # Here is where we get the resources
-            resource_ids = self._receive_resources(note, note_meta_ttype, note_full_ttype)
+            resource_ids = self._receive_resources(note, note_meta_ttype)
             
             # EEE handle resource error 
             if SyncStatus.rate_limit:
@@ -370,102 +365,12 @@ class PullNote(BaseSync, ShareNoteMixin):
                 break
             else:
                 chunk_start_after = sync_chunk.chunkHighUSN
-                
-        
-        # #################  end while True  ################# 
-
-    # **************** Get Full Note ****************
-    #
-    # Get the note data from API and return it
-    # Could get Rate Limit calling GetNote
-    def _get_full_note(self, note_ttype):
-        """Get full note"""
-        
-        # resource in the note, but the binary contents of the resources 
-        # and their recognition data will be omitted
-        try:
-            note_full_ttype = self.note_store.getNote(
-                self.auth_token, note_ttype.guid,
-                True, True, True, True,
-            )
-            return note_full_ttype
-        
-        except EDAMSystemException, e:
-            if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-                self.app.log(
-                    "Rate limit _get_full_note: %d minutes" % 
-                        (e.rateLimitDuration/60)
-                )
-                SyncStatus.rate_limit = e.rateLimitDuration
-                
-                return None
-
-    # **************** Get Resource Data ****************
-    #
-    # Get the note data from API and return it
-    # Could get Rate Limit calling getResourceData
-    def _get_resource_data(self, resource):
-        """Get resource data"""
-        
-        # string getResourceData(
-        #         string authenticationToken,
-        #         Types.Guid guid)
-        try:
-            data_body = self.note_store.getResourceData(
-                self.auth_token, resource.guid)
-        except EDAMSystemException, e:
-            if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-                self.app.log(
-                    "Rate limit _get_resource_data: %d minutes" % 
-                        (e.rateLimitDuration/60)
-                )
-                SyncStatus.rate_limit = e.rateLimitDuration
-                return
-
-        with open(resource.file_path, 'w') as data:
-            data.write(data_body)
-
-    # **************** Create Note ****************
-    #
-    # On entry note_ttype is Note structure that includes all metadata 
-    # (attributes, resources, etc.), but will not include the ENML content 
-    # of the note or the binary contents of any resources.
-    #
-    # _create_note pulls ENML content of the note and stores the note data
-    # in the database
-    def _create_note(self, note_meta_ttype):
-        """Create new note"""
-        
-        # returns Types.Note with Note content, binary contents 
-        # of the resources and their recognition data will be omitted
-        note_full_ttype = self._get_full_note(note_meta_ttype)
-        
-        # Note at this point:  
-        #    note_meta_ttype - data return from getFilteredSyncChunk
-        #    note_full_ttype - full note without resource binary
-        
-        # Catch Rate Limit and get out of _create_note
-        if SyncStatus.rate_limit:
-            note = None            
-            note_full_ttype = None
-            return
-        
-        # Put note into local database
-        #    ... create Note ORM with guid
-        note = models.Note(guid=note_full_ttype.guid)
-        #    ... add other note information
-        note.from_api(note_full_ttype, self.session)
-        
-        # ... commit note data
-        self.session.add(note)
-        self.session.commit()
-
-        return note, note_full_ttype
 
     # **************** Update Note****************
     #
     # note_ttype is NotesMetadataList -> NoteMetadata.notes structure 
     # that includes metadata, see _get_all_notes
+    #
     def _update_note(self, note_meta_ttype):
         """Update changed note"""
         
@@ -510,14 +415,14 @@ class PullNote(BaseSync, ShareNoteMixin):
             note_full_ttype = None
         
         return note, note_full_ttype
-    
-    
+
     # **************** Create Conflict ****************
     #
     # This is called when updating and server note is newer
     # local and local has changed since last sync
     #   note = database note
     #   note_ttype = full note structure
+    #
     def _create_conflict(self, note, note_full_ttype):
         """Create conflict note"""
         
@@ -537,8 +442,46 @@ class PullNote(BaseSync, ShareNoteMixin):
         self.session.add(conflict_note)
         self.session.commit()
 
-    
+    # **************** Create Note ****************
+    #
+    # On entry note_ttype is Note structure that includes all metadata 
+    # (attributes, resources, etc.), but will not include the ENML content 
+    # of the note or the binary contents of any resources.
+    #
+    # _create_note pulls ENML content of the note and stores the note data
+    # in the database
+    #
+    def _create_note(self, note_meta_ttype):
+        """Create new note"""
+        
+        # returns Types.Note with Note content, binary contents 
+        # of the resources and their recognition data will be omitted
+        note_full_ttype = self._get_full_note(note_meta_ttype)
+        
+        # Note at this point:  
+        #    note_meta_ttype - data return from getFilteredSyncChunk
+        #    note_full_ttype - full note without resource binary
+        
+        # Catch Rate Limit and get out of _create_note
+        if SyncStatus.rate_limit:
+            note = None            
+            note_full_ttype = None
+            return
+        
+        # Put note into local database
+        #    ... create Note ORM with guid
+        note = models.Note(guid=note_full_ttype.guid)
+        #    ... add other note information
+        note.from_api(note_full_ttype, self.session)
+        
+        # ... commit note data
+        self.session.add(note)
+        self.session.commit()
+
+        return note, note_full_ttype
+
     # **************** Remove Note ****************
+    #
     def _remove_notes(self):
         """Remove not exists notes"""
         if self._exists:
@@ -555,12 +498,32 @@ class PullNote(BaseSync, ShareNoteMixin):
             synchronize_session='fetch')
         self.session.commit()
 
-    
+    # **************** Check Sharing Info ****************
+    #
+    # Set (_share_note) or unset (_stop_sharing_note) sharing
+    #
+    def _check_sharing_information(self, note, note_ttype):
+        """Check actual sharing information"""
+        if not (
+            note_ttype.attributes.shareDate or note.share_status in (
+                const.SHARE_NONE, const.SHARE_NEED_SHARE,
+            )
+        ):
+            self._stop_sharing_note(note)
+        elif not (
+            note_ttype.attributes.shareDate == note.share_date
+            or note.share_status in (
+                const.SHARE_NEED_SHARE, const.SHARE_NEED_STOP,
+            )
+        ):
+            self._share_note(note, note_ttype.attributes.shareDate)
+            
     # **************** Receive Resource ****************
     #
     # note is the note as defind in models.py
     # note_ttype == Types.Note
-    def _receive_resources(self, note, note_meta_ttype, note_full_ttype):
+    #
+    def _receive_resources(self, note, note_meta_ttype):
         """Receive note resources"""
 
         # empty resource id list        
@@ -628,7 +591,6 @@ class PullNote(BaseSync, ShareNoteMixin):
 
         return resources_ids
 
-    
     # **************** Remove Resource ****************
     #
     def _remove_resources(self, note, resources_ids):
@@ -638,24 +600,56 @@ class PullNote(BaseSync, ShareNoteMixin):
             & (models.Resource.note_id == note.id)
         ).delete(synchronize_session='fetch')
         self.session.commit()
-
-    
-    # **************** Check Sharing Info ****************
+        
+    # **************** Get Full Note ****************
     #
-    # Set (_share_note) or unset (_stop_sharing_note) sharing
-    def _check_sharing_information(self, note, note_ttype):
-        """Check actual sharing information"""
-        if not (
-            note_ttype.attributes.shareDate or note.share_status in (
-                const.SHARE_NONE, const.SHARE_NEED_SHARE,
+    # Get the note data from API and return it
+    # Could get Rate Limit calling GetNote
+    #
+    def _get_full_note(self, note_ttype):
+        """Get full note"""
+        
+        # resource in the note, but the binary contents of the resources 
+        # and their recognition data will be omitted
+        try:
+            note_full_ttype = self.note_store.getNote(
+                self.auth_token, note_ttype.guid,
+                True, True, True, True,
             )
-        ):
-            self._stop_sharing_note(note)
-        elif not (
-            note_ttype.attributes.shareDate == note.share_date
-            or note.share_status in (
-                const.SHARE_NEED_SHARE, const.SHARE_NEED_STOP,
-            )
-        ):
-            self._share_note(note, note_ttype.attributes.shareDate)
+            return note_full_ttype
+        
+        except EDAMSystemException, e:
+            if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
+                self.app.log(
+                    "Rate limit _get_full_note: %d minutes" % 
+                        (e.rateLimitDuration/60)
+                )
+                SyncStatus.rate_limit = e.rateLimitDuration
+                
+                return None
+
+    # **************** Get Resource Data ****************
+    #
+    # Get the note data from API and return it
+    # Could get Rate Limit calling getResourceData
+    def _get_resource_data(self, resource):
+        """Get resource data"""
+        
+        # string getResourceData(
+        #         string authenticationToken,
+        #         Types.Guid guid)
+        try:
+            data_body = self.note_store.getResourceData(
+                self.auth_token, resource.guid)
+        except EDAMSystemException, e:
+            if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
+                self.app.log(
+                    "Rate limit _get_resource_data: %d minutes" % 
+                        (e.rateLimitDuration/60)
+                )
+                SyncStatus.rate_limit = e.rateLimitDuration
+                return
+
+        with open(resource.file_path, 'w') as data:
+            data.write(data_body)
 
