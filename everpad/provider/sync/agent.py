@@ -329,6 +329,7 @@ class SyncThread(QtCore.QThread):
                 self.status = const.STATUS_NONE            
         
         except Exception, e:  # maybe log this
+            self.app.log("I screwed up something")
             self.session.rollback()
             self._init_db()
             self.app.log(e)
