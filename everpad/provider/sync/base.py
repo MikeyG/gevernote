@@ -17,6 +17,7 @@ class SyncStatus(object):
     """Sync Status"""
     rate_limit = 0
     connect_error_count = 0
+    sync_start_usn = 0
 
        
 
