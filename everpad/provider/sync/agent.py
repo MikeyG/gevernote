@@ -269,11 +269,13 @@ class SyncThread(QtCore.QThread):
         
         if force_sync:
             self.app.log("force_sync sync")
+            # set update_count to 0 for full sync
             self.sync_state.update_count = 0
             need_to_update = True            
         elif self.sync_state.srv_fullSyncBefore < self.sync_state.srv_current_time:
             # Full sync needed
             self.app.log("fullSyncBefore sync")
+            # set update_count to 0 for full sync
             self.sync_state.update_count = 0
             need_to_update = True
         elif self.sync_state.update_count < self.sync_state.srv_update_count:
@@ -284,18 +286,22 @@ class SyncThread(QtCore.QThread):
             self.app.log("local only sync")
             need_to_update = False
  
-        # USN stats to log
+        # USN stats to log. Additionally, update_count will be the start and srv_update_count
+        # will be the initial high USN for the getFilteredSyncChunk calls to retrieve data
+        # from the server
         self.app.log("Local account updates count:  %s" % self.sync_state.update_count)
         self.app.log("Remote account updates count: %s" % self.sync_state.srv_update_count)        
 
         try:
             # Need a sync or update?            
             if need_to_update:
-                self.remote_changes()
+                self.remote_changes(
+                    self.sync_state.update_count,
+                    self.sync_state.srv_update_count
+                )
                 
             # If not rate limit then do local changes            
-            if not SyncStatus.rate_limit: 
-                self.local_changes()
+            self.local_changes()
             
             # if we get a good finish - update the count to match server
             self.sync_state.update_count = self.sync_state.srv_update_count
