@@ -364,7 +364,7 @@ class PullNote(BaseSync, ShareNoteMixin):
             # chunk_start_after set to chunkHighUSN which will retrieve 
             # starting at chunkHighUSN+1 to chunk_end when calling 
             # getFilteredSyncChunk again - got it?
-            if sync_chunk.chunkHighUSN == chunk_end):
+            if sync_chunk.chunkHighUSN == chunk_end:
                 break
             else:
                 chunk_start_after = sync_chunk.chunkHighUSN
