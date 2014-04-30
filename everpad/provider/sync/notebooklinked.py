@@ -10,7 +10,7 @@ from .base import BaseSync, SyncStatus
 
 
 class PullLBN(BaseSync):
-    """Pull tags from server"""
+    """Pull LBN from server"""
 
     # Args:
     #    self.auth_token, self.session,
@@ -23,8 +23,7 @@ class PullLBN(BaseSync):
     def pull(self, chunk_start_after, chunk_end):
         """Pull tags from server"""
 
-        # okay, so _get_all_tags uses a generator to yield each note
-        # _get_all_tags using getFilteredSyncChunk returns SyncChunk
+        # okay, so _get_all_lbn uses a generator to yield each record
         for lbn_meta_ttype in self._get_all_lbn(chunk_start_after, chunk_end):
 
             # EEE Rate limit from _get_all_notes then break
@@ -39,7 +38,7 @@ class PullLBN(BaseSync):
 
     # ************ Get All Linked Notebooks **************
     #
-    #  Uses getFilteredSyncChunk to pull LNB data
+    #  Uses getLinkedNotebookSyncChunk to pull LNB data
     #  from the server and yield each note for processing.
     #  chunk_start_after will be zero for a full sync and will
     #  be the local store high USN for increment sync
