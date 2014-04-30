@@ -75,69 +75,111 @@ class PushTag(BaseSync):
 class PullTag(BaseSync):
     """Pull tags from server"""
 
+    # Args:
+    #    self.auth_token, self.session,
+    #    self.note_store, self.user_store
+    #
     def __init__(self, *args, **kwargs):
         super(PullTag, self).__init__(*args, **kwargs)
         self._exists = []
 
-    def pull(self):
+    def pull(self, chunk_start_after, chunk_end):
         """Pull tags from server"""
 
-        """
-        # need to vary this for full and inc
-        # I want this to be 0 for full sync and
-        # start usn for inc sync
-        sync_start_usn = 0
-        
-        while True:
-            try:
-                tag_chunk = self.note_store.getFilteredSyncChunk(
-                    self.auth_token,
-                    sync_start_usn,
-                    self.sync_state.srv_update_count,
-                    SyncChunkFilter(includeTags=True)
-                )
-            except EDAMSystemException, e:                
-                if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-                    self.app.log(
-                        "Rate limit in tag chunk: %d minutes" %
-                        (e.rateLimitDuration/60)
-                    )
-                    time.sleep(e.rateLimitDuration)
-        
-            for tag_ttype in self.tag_chunk.tags:
- 
-            self.app.log(
-                'Pulling tag "%s" from remote server.' % tag_ttype.name)                   
-            
-            try:
-                tag = self._update_tag(tag_ttype)
-            except NoResultFound:
-                tag = self._create_tag(tag_ttype)
-                
-            self._exists.append(tag.id)
+        # okay, so _get_all_tags uses a generator to yield each note
+        # _get_all_tags using getFilteredSyncChunk returns SyncChunk
+        for tag_meta_ttype in self._get_all_tags(chunk_start_after, chunk_end):
 
-            if self.tag_chunk.updateCount == self.tag_chunk.chunkHighUSN:
+            # EEE Rate limit from _get_all_notes then break
+            if SyncStatus.rate_limit:
                 break
-            else:
-                self.sync_start_usn = self.tag_chunk.chunkHighUSN + 1
-        """
-
-        for tag_ttype in self.note_store.listTags(self.auth_token):
             
             self.app.log(
-                'Pulling tag "%s" from remote server.' % tag_ttype.name)
+                'Pulling tag "%s" from remote server.' % tag_meta_ttype.name) 
+
             try:
-                tag = self._update_tag(tag_ttype)
+                # check if tag exists and if needs update
+                # also handle conflicts
+                tag = self._update_tag(tag_meta_ttype)
+                
+                # EEE Rate limit from _update_tag then break
+                if SyncStatus.rate_limit:
+                    break
+
+                # If we get here the note has been created
+                self.app.log("Tag updated")
+                
             except NoResultFound:
-                tag = self._create_tag(tag_ttype)
+                
+                # the tag is not in the local database so create
+                tag = self._create_tag(tag_meta_ttype)
+
+                # EEE Rate limit from _create_tag then break
+                if SyncStatus.rate_limit:
+                    break
+                
+                # If we get here the note has been created
+                self.app.log("Tag created")
                 
             self._exists.append(tag.id)
-
-
 
 
         self.session.commit()
         self._remove_tags()
+
+    # **************** Get All Tags ****************
+    #
+    #  Uses getFilteredSyncChunk to pull tag data
+    #  from the server and yield each note for processing.
+    #  chunk_start_after will be zero for a full sync and will
+    #  be the local store high USN for increment sync
+    #
+    def _get_all_tags(self, chunk_start_after, chunk_end):
+        """Iterate all notes"""
+        
+        while True:
+            try:
+                sync_chunk = self.note_store.getFilteredSyncChunk(
+                    self.auth_token,
+                    chunk_start_after,
+                    chunk_end,
+                    SyncChunkFilter(
+                        includeTags=True,
+                    )
+                ) 
+            # EEE if a rate limit happens 
+            except EDAMSystemException, e:
+                if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
+                    self.app.log(
+                        "Rate limit in _get_all_tags: %d minutes" % 
+                            (e.rateLimitDuration/60)
+                    )
+                    SyncStatus.rate_limit = e.rateLimitDuration
+                    break
+            
+            # https://www.jeffknupp.com/blog/2013/04/07/
+            #       improve-your-python-yield-and-generators-explained/
+            # https://wiki.python.org/moin/Generators
+            # Each SyncChunk.tags is yielded (yield note) for 
+            # create or update 
+            for srv_tag in sync_chunk.tags:
+                # no notes in this chunk                
+                if not srv_tag.guid:
+                    break
+                yield srv_tag
+
+            # Here chunkHighUSN is the highest USN returned by the current
+            # getFilteredSyncChunk call.  If chunkHighUSN == chunk_end then
+            # we have received all Note structures on the server so break.
+            # If chunkHighUSN != chunk_end then there is more to get so 
+            # chunk_start_after set to chunkHighUSN which will retrieve 
+            # starting at chunkHighUSN+1 to chunk_end when calling 
+            # getFilteredSyncChunk again - got it?
+            if sync_chunk.chunkHighUSN == sync_chunk.updateCount:
+                break
+            else:
+                chunk_start_after = sync_chunk.chunkHighUSN
+
 
     # new tag
     def _create_tag(self, tag_ttype):
