@@ -237,7 +237,7 @@ class PullNote(BaseSync, ShareNoteMixin):
         
         # okay, so _get_all_notes uses a generator to yield each note
         # one at a time - great leap for a python dummy such as myself
-        # _get_all_notes using findNotesMetadata returns NotesMetadataList
+        # _get_all_notes using getFilteredSyncChunk returns SyncChunk
         for note_meta_ttype in self._get_all_notes(chunk_start_after, chunk_end):
             
             # EEE Rate limit from _get_all_notes then break
@@ -248,13 +248,9 @@ class PullNote(BaseSync, ShareNoteMixin):
             self.app.log(
                 'Pulling note "%s" from remote server.' % note_meta_ttype.title)
             
-            # note_ttype is a NotesMetadataList -> NoteMetadata (notes)
+            # note_meta_ttype is a getFilteredSyncChunk -> SyncChunk.notes
             # structure of the note
-            
-            # @@@@ the resource grab/update is going to have to happen in
-            #  _create_note  _update_note          
-            
-            
+
             # Pull sequence:
             #  
             # _update_note  
@@ -277,24 +273,34 @@ class PullNote(BaseSync, ShareNoteMixin):
             #
             
             try:
+                # check if note exists and if needs update
+                # also handle conflicts
                 note = self._update_note(note_meta_ttype)
+                
                 # EEE Rate limit from _update_note then break
                 if SyncStatus.rate_limit:
                     break
+                
+                # If we get here then the local note is current 
                 self.app.log("No update required")
                 
             except NoResultFound:
+                
+                # the note is not in the local database so create
                 note = self._create_note(note_meta_ttype)
+                
                 # EEE Rate limit from _create_note then break
                 if SyncStatus.rate_limit:
                     break
+                
+                # If we get here the note has been created
                 self.app.log("Note created")
                 
             # At this point note is the note as defind in models.py
+            # add the note id to the _exists list
             self._exists.append(note.id)
             
-            # NotesMetadataList - includeAttributes
-            # set or unset sharing
+            # Set or unset sharing
             self._check_sharing_information(note, note_meta_ttype)
             	            
             # Here is where we get the resources
@@ -311,9 +317,12 @@ class PullNote(BaseSync, ShareNoteMixin):
             if resource_ids:
                  self._remove_resources(note, resource_ids)
                  
-            #SyncStatus.rate_limit
 
-        #@@@@ end of for note_meta_ttype in self._get_all_note 
+        #@@@@ end of "for note_meta_ttype in self._get_all_notes"
+        #     a note has been processed, do next note
+        
+        # !!!! pull complete or have an error, eitherway this pull
+        # is complete
         
         # commit to local database
         self.session.commit()
@@ -379,8 +388,8 @@ class PullNote(BaseSync, ShareNoteMixin):
 
     # **************** Update Note****************
     #
-    # note_ttype is NotesMetadataList -> NoteMetadata.notes structure 
-    # that includes metadata, see _get_all_notes
+    # note_meta_ttype is a getFilteredSyncChunk -> SyncChunk.notes 
+    # structure, see _get_all_notes
     #
     def _update_note(self, note_meta_ttype):
         """Update changed note"""
@@ -489,6 +498,7 @@ class PullNote(BaseSync, ShareNoteMixin):
     #
     def _remove_notes(self):
         """Remove not exists notes"""
+        
         if self._exists:
             q = ((~models.Note.id.in_(self._exists) |
                 ~models.Note.conflict_parent_id.in_(self._exists)) &
@@ -499,8 +509,10 @@ class PullNote(BaseSync, ShareNoteMixin):
             q = (~models.Note.action.in_((
                     const.ACTION_NOEXSIST, const.ACTION_CREATE,
                     const.ACTION_CHANGE, const.ACTION_CONFLICT)))
+        
         self.session.query(models.Note).filter(q).delete(
             synchronize_session='fetch')
+        
         self.session.commit()
 
     # **************** Check Sharing Info ****************
@@ -509,6 +521,9 @@ class PullNote(BaseSync, ShareNoteMixin):
     #
     def _check_sharing_information(self, note, note_ttype):
         """Check actual sharing information"""
+        
+        # If SHARE_NONE or SHARE_NEED_SHARE are not set the 
+        # stop sharing note - see class ShareNoteMixin
         if not (
             note_ttype.attributes.shareDate or note.share_status in (
                 const.SHARE_NONE, const.SHARE_NEED_SHARE,
@@ -516,6 +531,8 @@ class PullNote(BaseSync, ShareNoteMixin):
         ):
             self._stop_sharing_note(note)
         elif not (
+            # Server note set for share then set local note share info
+            # - see class ShareNoteMixin
             note_ttype.attributes.shareDate == note.share_date
             or note.share_status in (
                 const.SHARE_NEED_SHARE, const.SHARE_NEED_STOP,
@@ -563,8 +580,6 @@ class PullNote(BaseSync, ShareNoteMixin):
                     if SyncStatus.rate_limit:
                         break 
 
-                    #@@@@ do I need session.commit() here????
-                    # I put it here for now
                     self.session.commit()
                     
             # resourse not found in database then:
@@ -592,10 +607,12 @@ class PullNote(BaseSync, ShareNoteMixin):
     #
     def _remove_resources(self, note, resources_ids):
         """Remove non exists resources"""
+        
         self.session.query(models.Resource).filter(
             ~models.Resource.id.in_(resources_ids)
             & (models.Resource.note_id == note.id)
         ).delete(synchronize_session='fetch')
+        
         self.session.commit()
         
     # **************** Get Full Note ****************
@@ -606,6 +623,7 @@ class PullNote(BaseSync, ShareNoteMixin):
     def _get_full_note(self, note_ttype):
         """Get full note"""
         
+        # Use getNOte to pull the full note from server
         # resource in the note, but the binary contents of the resources 
         # and their recognition data will be omitted
         try:
