@@ -2,7 +2,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from evernote.edam.error.ttypes import EDAMUserException, EDAMSystemException, EDAMErrorCode
 from evernote.edam.limits import constants as limits
 from evernote.edam.type import ttypes
-from evernote.edam.notestore.ttypes import SyncChunk, getLinkedNotebookSyncChunk
+from evernote.edam.notestore.ttypes import SyncChunk, getFilteredSyncChunk
 from ... import const
 from ..exceptions import TTypeValidationFailed
 from .. import models
@@ -48,12 +48,16 @@ class PullLBN(BaseSync):
 
         while True:
             try:
-                sync_chunk = self.note_store.getLinkedNotebookSyncChunk(
+            try:
+                sync_chunk = self.note_store.getFilteredSyncChunk(
                     self.auth_token,
                     chunk_start_after,
                     chunk_end,
-                    False
+                    SyncChunkFilter(
+                        includeLinkedNotebooks=True,
+                    )
                 ) 
+
             # EEE if a rate limit happens 
             except EDAMSystemException, e:
                 if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
