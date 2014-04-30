@@ -8,10 +8,8 @@ from .. import models
 from .base import BaseSync, SyncStatus
 import regex
 
-
 # ****** Contains:
 #        PushNotebook and PullNoteBook
-
 
 # *************************************************
 # **************    Push Notebook    **************
@@ -19,7 +17,7 @@ import regex
 class PushNotebook(BaseSync):
     """Notebook sync"""
 
-    def push(self):
+    def push(self, chunk_start_after, chunk_end):
         """Push notebook changes to server"""
         
         # for each notebook that requires action
