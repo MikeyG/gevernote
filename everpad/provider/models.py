@@ -31,6 +31,24 @@ notetags_table = Table(
 
 # *********************************************************
 # Note ORM class to save note specific data to the database
+#
+# Struct: Note
+# guid Guid 
+# title string 
+# content string 
+# contentHash string 
+# contentLength i32 
+# created Timestamp 
+# updated Timestamp 
+# deleted Timestamp 
+# active bool 
+# -- not used updateSequenceNum i32 
+# notebookGuid string 
+# tagGuids list<Guid> 
+# resources list<Resource> 
+# --- Maybe use later - attributes NoteAttributes 
+# -- not used tagNames list<string> 
+
 class Note(Base):
     __tablename__ = 'notes'
     id = Column(Integer, primary_key=True)
@@ -307,8 +325,14 @@ class Notebook(Base):
 
 
 # *************************************************************
-# Notebook ORM class to save tag specific place data to 
-# the database
+# Tag ORM class to save tag specific place data to the database
+#
+# Struct: Tag
+# guid Guid 
+# name string 
+# parentGuid Guid 
+# -- Not used - updateSequenceNum i32 
+
 class Tag(Base):
     __tablename__ = 'tags'
     id = Column(Integer, primary_key=True)
@@ -327,8 +351,22 @@ class Tag(Base):
 
 
 # *************************************************************
-# Notebook ORM class to save resource specific place data to 
-# the database
+# Resource ORM class to save resource specific place data to the database
+#
+# Struct: Resource
+# guid Guid 
+# noteGuid Guid 
+# data Data  -- bodyHash string
+#            |- size i32
+#            -- body string
+# mime string 
+# -- look at later - width i16 
+# -- look at later - height i16 
+# -- Not used yet - recognition Data 
+# -- Not used yet - attributes ResourceAttributes 
+# -- Not used updateSequenceNum i32 
+# -- Not used alternateData Data 
+
 class Resource(Base):
     __tablename__ = 'resources'
     id = Column(Integer, primary_key=True)
@@ -364,20 +402,20 @@ class Resource(Base):
             pass
         self.file_path = prepare_file_path(path, self.file_name)
 
-#        with open(self.file_path, 'w') as data:
-#            data.write(resource.data.body)
 
+# ***************************************************************
+# Place ORM class to save note specific place data to the database
+#
+# Struct: 
 
-# *************************************************************
-# Notebook ORM class to save note specific place data to the 
-# database
 class Place(Base):
     __tablename__ = 'places'
     id = Column(Integer, primary_key=True)
     name = Column(String)
 
 # *************************************************************
-# Notebook ORM class to save sync specific data to the database
+# Internal table for provider use
+#
 class Sync(Base):
     __tablename__ = 'sync'
     id = Column(Integer, primary_key=True)
