@@ -331,8 +331,6 @@ class PullNote(BaseSync, ShareNoteMixin):
     def _get_all_notes(self, chunk_start_after, chunk_end):
         """Iterate all notes"""
         
-        self.app.log("get_all_notes")
-
         while True:
             try:
                 sync_chunk = self.note_store.getFilteredSyncChunk(
@@ -354,13 +352,16 @@ class PullNote(BaseSync, ShareNoteMixin):
                     )
                     SyncStatus.rate_limit = e.rateLimitDuration
                     break
-
+            
             # https://www.jeffknupp.com/blog/2013/04/07/
             #       improve-your-python-yield-and-generators-explained/
             # https://wiki.python.org/moin/Generators
             # Each SyncChunk.notes is yielded (yield note) for 
             # create or update in pull()
             for srv_note in sync_chunk.notes:
+                # no notes in this chunk                
+                if not srv_note.guid:
+                    break
                 yield srv_note
 
             # Here chunkHighUSN is the highest USN returned by the current
@@ -370,10 +371,11 @@ class PullNote(BaseSync, ShareNoteMixin):
             # chunk_start_after set to chunkHighUSN which will retrieve 
             # starting at chunkHighUSN+1 to chunk_end when calling 
             # getFilteredSyncChunk again - got it?
-            if sync_chunk.chunkHighUSN == chunk_end:
+            if sync_chunk.chunkHighUSN == sync_chunk.updateCount:
                 break
             else:
                 chunk_start_after = sync_chunk.chunkHighUSN
+
 
     # **************** Update Note****************
     #

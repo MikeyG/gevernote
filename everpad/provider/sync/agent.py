@@ -251,7 +251,6 @@ class SyncThread(QtCore.QThread):
             self.app.log("RateLimit early perform( ) - sleeping")
             self.status = const.STATUS_RATE
             time.sleep(SyncStatus.rate_limit)
-            
             # clear rate limit
             SyncStatus.rate_limit = 0
 
@@ -292,52 +291,69 @@ class SyncThread(QtCore.QThread):
         self.app.log("Local account updates count:  %s" % self.sync_state.update_count)
         self.app.log("Remote account updates count: %s" % self.sync_state.srv_update_count)        
 
-        try:
-            # Need a sync or update?            
-            if need_to_update:
-                self.remote_changes(
-                    self.sync_state.update_count,
-                    self.sync_state.srv_update_count
-                )
-                
+        # try:
+            
+        # Need a sync or update?            
+        if need_to_update:
+            self.remote_changes(
+                self.sync_state.update_count,
+                self.sync_state.srv_update_count
+            )
+        
+        # No fancy stuff, just brute checks        
+        if not SyncStatus.rate_limit:
             # If not rate limit then do local changes            
             self.local_changes()
             
+        # If Rate Limit in either remote or local, tell us
+        # cleanup and get out        
+        if SyncStatus.rate_limit:
+            self.app.log("Rate limit no full sync.")
+            self.session.rollback()
+            self._init_db()
+            self.data_changed.emit()
+            self.status = const.STATUS_RATE
+            self.sync_state_changed.emit(const.SYNC_STATE_FINISH) 
+        else:
+            self.app.log("Sync performed.")	
+
             # if we get a good finish - update the count to match server
             self.sync_state.update_count = self.sync_state.srv_update_count
-            
             self.sync_state.last_sync = datetime.now( )
             self.data_changed.emit()
+            self.status = const.STATUS_NONE
+            self.sync_state_changed.emit(const.SYNC_STATE_FINISH)
 
-            if not SyncStatus.rate_limit:             
-                self.app.log("Sync performed.")
-            else:
-                self.app.log("Rate limit no full sync.") 
+
+#            if not SyncStatus.rate_limit:             
+#                self.app.log("Sync performed.")
+#            else:
+#                self.app.log("Rate limit no full sync.") 
                            
             # Well sync should be done - I hope
             
-        except EDAMSystemException, e:
-            if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-                self.app.log(
-                    "Rate limit end of perform: %d minutes - sleeping" % 
-                    (e.rateLimitDuration/60)
-                )
-                self.session.rollback()
-                self._init_db()
-                self.status = const.STATUS_RATE
-                SyncStatus.rate_limit = e.rateLimitDuration
-                self.status = const.STATUS_NONE            
+#        except EDAMSystemException, e:
+#            if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
+#                self.app.log(
+#                    "Rate limit end of perform: %d minutes - sleeping" % 
+#                    (e.rateLimitDuration/60)
+#                )
+
+
+#                SyncStatus.rate_limit = e.rateLimitDuration
+#                self.status = const.STATUS_NONE            
         
-        except Exception, e:  # maybe log this
-            self.app.log("I screwed up something")
-            self.session.rollback()
-            self._init_db()
-            self.app.log(e)
+#        except Exception, e:  # maybe log this
+#            self.app.log("I screwed up something")
+#            self.session.rollback()
+#            self._init_db()
+#            self.app.log(e)
         
-        finally:
-            self.sync_state_changed.emit(const.SYNC_STATE_FINISH)
-            self.status = const.STATUS_NONE
-            self.all_notes = None
+#        self.sync_state_changed.emit(const.SYNC_STATE_FINISH)
+#        self.status = const.STATUS_NONE
+        
+
+        # self.all_notes = None
 
         # check - should not set if error
         # self.sync_state.last_sync = datetime.now( )
