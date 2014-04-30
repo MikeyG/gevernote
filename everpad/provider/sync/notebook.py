@@ -17,7 +17,7 @@ import regex
 class PushNotebook(BaseSync):
     """Notebook sync"""
 
-    def push(self, chunk_start_after, chunk_end):
+    def push(self):
         """Push notebook changes to server"""
         
         # for each notebook that requires action
@@ -121,7 +121,7 @@ class PullNotebook(BaseSync):
         super(PullNotebook, self).__init__(*args, **kwargs)
         self._exists = []
 
-    def pull(self):
+    def pull(self, chunk_start_after, chunk_end):
         """Receive notebooks from server"""
                 
         # request and return all notebooks in Notebook structure
