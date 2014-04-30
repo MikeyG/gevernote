@@ -24,7 +24,6 @@ from .base import SyncStatus
 
 """
 
-#sync_info = SyncStatus( )
 
 # ********** SyncThread **********
 # 
@@ -324,43 +323,6 @@ class SyncThread(QtCore.QThread):
             self.status = const.STATUS_NONE
             self.sync_state_changed.emit(const.SYNC_STATE_FINISH)
 
-
-#            if not SyncStatus.rate_limit:             
-#                self.app.log("Sync performed.")
-#            else:
-#                self.app.log("Rate limit no full sync.") 
-                           
-            # Well sync should be done - I hope
-            
-#        except EDAMSystemException, e:
-#            if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-#                self.app.log(
-#                    "Rate limit end of perform: %d minutes - sleeping" % 
-#                    (e.rateLimitDuration/60)
-#                )
-
-
-#                SyncStatus.rate_limit = e.rateLimitDuration
-#                self.status = const.STATUS_NONE            
-        
-#        except Exception, e:  # maybe log this
-#            self.app.log("I screwed up something")
-#            self.session.rollback()
-#            self._init_db()
-#            self.app.log(e)
-        
-#        self.sync_state_changed.emit(const.SYNC_STATE_FINISH)
-#        self.status = const.STATUS_NONE
-        
-
-        # self.all_notes = None
-
-        # check - should not set if error
-        # self.sync_state.last_sync = datetime.now( )
-
-        # self.data_changed.emit()
-        # self.app.log("Sync performed.")
-
     # *** Get Server Sync State
     # Sync table with current sync status
     def _get_sync_state(self):
@@ -421,7 +383,7 @@ class SyncThread(QtCore.QThread):
         
         # Notebooks
         self.sync_state_changed.emit(const.SYNC_STATE_NOTEBOOKS_REMOTE)
-        notebook.PullNotebook(*self._get_sync_args()).pull()
+        notebook.PullNotebook(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
         
         # Tags
         self.sync_state_changed.emit(const.SYNC_STATE_TAGS_REMOTE)
