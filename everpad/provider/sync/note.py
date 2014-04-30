@@ -165,6 +165,8 @@ class PushNote(BaseSync, ShareNoteMixin):
         return str(soup)
 
     # **************** Push Note ****************
+    # Uses API call
+    # # @@@@@ API call could get Rate limit
     #
     def _push_new_note(self, note, note_ttype):
         """Push new note to remote"""
@@ -180,6 +182,8 @@ class PushNote(BaseSync, ShareNoteMixin):
             note.action = const.ACTION_NONE
 
     # **************** Create Note ****************
+    # Uses API call
+    # # @@@@@ API call could get Rate limit
     #
     def _push_changed_note(self, note, note_ttype):
         """Push changed note to remote"""
@@ -198,6 +202,8 @@ class PushNote(BaseSync, ShareNoteMixin):
             note.action = const.ACTION_NONE
 
     # **************** Delete Note ****************
+    # Uses API call
+    # # @@@@@ API call could get Rate limit
     #
     def _delete_note(self, note, note_ttype):
         """Delete note"""
