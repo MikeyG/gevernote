@@ -184,10 +184,22 @@ class PullTag(BaseSync):
     # new tag
     def _create_tag(self, tag_ttype):
         """Create tag from server"""
-        tag = models.Tag(guid=tag_ttype.guid)
-        tag.from_api(tag_ttype)
+        
+        try:
+            # Is there a conflict?
+            tag = self.session.query(models.Tag).filter(
+                models.Tag.name == tag_ttype.name.decode('utf8'),
+            ).one()
+            
+            self.app.log("Tag conflict")
+            
+        except NoResultFound:        
+            tag = models.Tag(guid=tag_ttype.guid)
+            tag.from_api(tag_ttype)
+        
         self.session.add(tag)
         self.session.commit()
+        
         return tag
 
     # update tag
