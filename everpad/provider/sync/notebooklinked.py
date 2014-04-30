@@ -1,3 +1,12 @@
+from sqlalchemy.orm.exc import NoResultFound
+from evernote.edam.error.ttypes import EDAMUserException, EDAMSystemException, EDAMErrorCode
+from evernote.edam.limits import constants as limits
+from evernote.edam.type import ttypes
+from evernote.edam.notestore.ttypes import SyncChunk, getLinkedNotebookSyncChunk
+from ... import const
+from ..exceptions import TTypeValidationFailed
+from .. import models
+from .base import BaseSync, SyncStatus
 
 
 
@@ -6,11 +15,32 @@
 
 
 
+class PullLBN(BaseSync):
+    """Pull tags from server"""
 
+    # Args:
+    #    self.auth_token, self.session,
+    #    self.note_store, self.user_store
+    #
+    def __init__(self, *args, **kwargs):
+        super(PullLBN, self).__init__(*args, **kwargs)
+        self._exists = []
 
+    def pull(self, chunk_start_after, chunk_end):
+        """Pull tags from server"""
 
+        # okay, so _get_all_tags uses a generator to yield each note
+        # _get_all_tags using getFilteredSyncChunk returns SyncChunk
+        for lbn_meta_ttype in self._get_all_lbn(chunk_start_after, chunk_end):
 
+            # EEE Rate limit from _get_all_notes then break
+            if SyncStatus.rate_limit:
+                break
+            
+            self.app.log(
+                'Pulling lbn "%s" from remote server.' % lbn_meta_ttype.shareName) 
 
+        # @@@@ This file is just a stub
 
 
     # ************ Get All Linked Notebooks **************
@@ -22,16 +52,14 @@
     #
     def _get_all_lbn(self, chunk_start_after, chunk_end):
         """Iterate all notes"""
-        
+
         while True:
             try:
-                sync_chunk = self.note_store.getFilteredSyncChunk(
+                sync_chunk = self.note_store.getLinkedNotebookSyncChunk(
                     self.auth_token,
                     chunk_start_after,
                     chunk_end,
-                    SyncChunkFilter(
-                        includeTags=True,
-                    )
+                    False
                 ) 
             # EEE if a rate limit happens 
             except EDAMSystemException, e:
@@ -48,11 +76,11 @@
             # https://wiki.python.org/moin/Generators
             # Each SyncChunk.tags is yielded (yield note) for 
             # create or update 
-            for srv_tag in sync_chunk.tags:
+            for srv_lbn in sync_chunk.linkedNotebooks:
                 # no notes in this chunk                
-                if not srv_tag.guid:
+                if not srv_lbn.guid:
                     break
-                yield srv_tag
+                yield srv_lbn
 
             # Here chunkHighUSN is the highest USN returned by the current
             # getFilteredSyncChunk call.  If chunkHighUSN == chunk_end then
