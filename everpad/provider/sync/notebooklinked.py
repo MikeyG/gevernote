@@ -9,12 +9,6 @@ from .. import models
 from .base import BaseSync, SyncStatus
 
 
-
-
-
-
-
-
 class PullLBN(BaseSync):
     """Pull tags from server"""
 
