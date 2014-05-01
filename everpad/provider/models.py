@@ -351,6 +351,38 @@ class Tag(Base):
 
 
 # *************************************************************
+# Searches ORM class to save data to the database
+#
+# Struct: SavedSearch
+# guid Guid 
+# name string 
+# query string 
+# format QueryFormat 
+# updateSequenceNum i32 
+# scope SavedSearchScope 
+
+class Searches(Base):
+    __tablename__ = 'searches'
+    id = Column(Integer, primary_key=True)
+    guid = Column(String)
+    name = Column(String)
+    query = Column(String)
+    queryformat = Column(Integer)
+
+    # local use
+    action = Column(Integer)
+
+    def from_api(self, savsearch):
+        """Fill data from api"""
+        
+        self.guid = savsearch.guid
+        self.name = savsearch.name
+        self.query = savsearch.query
+
+        self.action = const.ACTION_NONE
+        
+        
+# *************************************************************
 # Resource ORM class to save resource specific place data to the database
 #
 # Struct: Resource
