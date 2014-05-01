@@ -373,11 +373,14 @@ class PullNote(BaseSync, ShareNoteMixin):
             # https://wiki.python.org/moin/Generators
             # Each SyncChunk.notes is yielded (yield note) for 
             # create or update in pull()
-            for srv_note in sync_chunk.notes:
-                # no notes in this chunk                
-                if not srv_note.guid:
-                    break
-                yield srv_note
+            try:
+                for srv_note in sync_chunk.notes:
+                    # no notes in this chunk                
+                    if not srv_note.guid:
+                        break
+                    yield srv_note
+            except:
+            	pass
 
             # Here chunkHighUSN is the highest USN returned by the current
             # getFilteredSyncChunk call.  If chunkHighUSN == chunk_end then

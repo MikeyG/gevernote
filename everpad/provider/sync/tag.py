@@ -158,17 +158,21 @@ class PullTag(BaseSync):
                     SyncStatus.rate_limit = e.rateLimitDuration
                     break
             
+        
             # https://www.jeffknupp.com/blog/2013/04/07/
             #       improve-your-python-yield-and-generators-explained/
             # https://wiki.python.org/moin/Generators
             # Each SyncChunk.tags is yielded (yield note) for 
             # create or update 
-            for srv_tag in sync_chunk.tags:
-                # no notes in this chunk                
-                if not srv_tag.guid:
-                    break
-                yield srv_tag
-
+            try:            
+                for srv_tag in sync_chunk.tags:
+                    # no notes in this chunk                
+                    if not srv_tag.guid:
+                        break
+                    yield srv_tag
+            except:
+            	pass
+            	
             # Here chunkHighUSN is the highest USN returned by the current
             # getFilteredSyncChunk call.  If chunkHighUSN == chunk_end then
             # we have received all Note structures on the server so break.

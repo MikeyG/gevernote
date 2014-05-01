@@ -48,7 +48,6 @@ class PullSearch(BaseSync):
 
         while True:
             try:
-            try:
                 sync_chunk = self.note_store.getFilteredSyncChunk(
                     self.auth_token,
                     chunk_start_after,
@@ -73,11 +72,15 @@ class PullSearch(BaseSync):
             # https://wiki.python.org/moin/Generators
             # Each SyncChunk.tags is yielded (yield note) for 
             # create or update 
-            for srv_search in sync_chunk.searches:
-                # no notes in this chunk                
-                if not srv_search.guid:
-                    break
-                yield srv_search
+            
+            try:
+                for srv_search in sync_chunk.searches:
+                    # no notes in this chunk                
+                    if not srv_search.guid:
+                        break
+                    yield srv_search
+            except:
+            	pass
 
             # Here chunkHighUSN is the highest USN returned by the current
             # getFilteredSyncChunk call.  If chunkHighUSN == chunk_end then

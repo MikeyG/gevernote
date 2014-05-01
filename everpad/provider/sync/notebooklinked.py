@@ -48,7 +48,6 @@ class PullLBN(BaseSync):
 
         while True:
             try:
-            try:
                 sync_chunk = self.note_store.getFilteredSyncChunk(
                     self.auth_token,
                     chunk_start_after,
@@ -73,12 +72,16 @@ class PullLBN(BaseSync):
             # https://wiki.python.org/moin/Generators
             # Each SyncChunk.tags is yielded (yield note) for 
             # create or update 
-            for srv_lbn in sync_chunk.linkedNotebooks:
-                # no notes in this chunk                
-                if not srv_lbn.guid:
-                    break
-                yield srv_lbn
-
+            
+            try:
+                for srv_lbn in sync_chunk.linkedNotebooks:
+                    # no notes in this chunk                
+                    if not srv_lbn.guid:
+                        break
+                    yield srv_lbn
+            except:
+            	pass
+            	
             # Here chunkHighUSN is the highest USN returned by the current
             # getFilteredSyncChunk call.  If chunkHighUSN == chunk_end then
             # we have received all Note structures on the server so break.
