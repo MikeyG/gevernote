@@ -389,6 +389,10 @@ class SyncThread(QtCore.QThread):
         self.sync_state_changed.emit(const.SYNC_STATE_TAGS_REMOTE)
         tag.PullTag(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
 
+        # Searches
+        self.sync_state_changed.emit(const.SYNC_STATE_SEARCHES_REMOTE)
+        tag.PullSearch(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
+        
         # Notes and Resources
         self.sync_state_changed.emit(const.SYNC_STATE_NOTES_REMOTE)
         note.PullNote(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
