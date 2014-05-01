@@ -36,15 +36,15 @@ class PullSearch(BaseSync):
         # @@@@ This file is just a stub
 
 
-    # ************ Get All Linked Notebooks **************
+    # ************ Get All Saved Searches **************
     #
-    #  Uses getLinkedNotebookSyncChunk to pull LNB data
+    #  Uses getFilteredSyncChunk to pull LNB data
     #  from the server and yield each note for processing.
     #  chunk_start_after will be zero for a full sync and will
     #  be the local store high USN for increment sync
     #
     def _get_all_search(self, chunk_start_after, chunk_end):
-        """Iterate all notes"""
+        """Iterate all searches"""
 
         while True:
             try:
@@ -72,7 +72,6 @@ class PullSearch(BaseSync):
             # https://wiki.python.org/moin/Generators
             # Each SyncChunk.tags is yielded (yield note) for 
             # create or update 
-            
             try:
                 for srv_search in sync_chunk.searches:
                     # no notes in this chunk                

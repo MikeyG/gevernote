@@ -136,7 +136,7 @@ class PullTag(BaseSync):
     #  be the local store high USN for increment sync
     #
     def _get_all_tags(self, chunk_start_after, chunk_end):
-        """Iterate all notes"""
+        """Iterate all tags"""
         
         while True:
             try:
@@ -157,7 +157,6 @@ class PullTag(BaseSync):
                     )
                     SyncStatus.rate_limit = e.rateLimitDuration
                     break
-            
         
             # https://www.jeffknupp.com/blog/2013/04/07/
             #       improve-your-python-yield-and-generators-explained/
@@ -185,7 +184,6 @@ class PullTag(BaseSync):
             else:
                 chunk_start_after = sync_chunk.chunkHighUSN
 
-
     # new tag
     def _create_tag(self, tag_ttype):
         """Create tag from server"""
@@ -195,6 +193,8 @@ class PullTag(BaseSync):
             tag = self.session.query(models.Tag).filter(
                 models.Tag.name == tag_ttype.name.decode('utf8'),
             ).one()
+            
+            # TBD append a number to conflict tag name and create
             
             self.app.log("Tag conflict")
             

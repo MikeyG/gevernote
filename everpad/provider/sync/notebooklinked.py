@@ -44,7 +44,7 @@ class PullLBN(BaseSync):
     #  be the local store high USN for increment sync
     #
     def _get_all_lbn(self, chunk_start_after, chunk_end):
-        """Iterate all notes"""
+        """Iterate all linked notebooks"""
 
         while True:
             try:
@@ -72,7 +72,6 @@ class PullLBN(BaseSync):
             # https://wiki.python.org/moin/Generators
             # Each SyncChunk.tags is yielded (yield note) for 
             # create or update 
-            
             try:
                 for srv_lbn in sync_chunk.linkedNotebooks:
                     # no notes in this chunk                
