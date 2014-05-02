@@ -239,10 +239,16 @@ class Management(QDialog):
         )
 
     
-    # change evernote account authorization    
+    # change evernote account authorization 
+    # 050214: Tried to install on my laptop and everything falls apart 
+    # trying to authenticate WTH
     @Slot()
     def change_auth(self):
+        # If we already are authenticated, this click sets up to
+        # remove authentication ---
         if self.app.provider.is_authenticated():
+            
+            # You really want to do this???? LOL
             msgBox = QMessageBox(
                 QMessageBox.Critical,
                 self.tr("You are trying to remove authorisation"),
@@ -253,24 +259,41 @@ class Management(QDialog):
                 QMessageBox.Yes | QMessageBox.No
             )
             ret = msgBox.exec_()
+            
+            # 
             if ret == QMessageBox.Yes:
                 # daemon.py
                 self.app.provider.remove_authentication()
                 self.update_tabs()
+        
+        # If not athenticated then authenticate --- 
         else:
             self.ui.tabWidget.hide()
             self.ui.webView.show()
             
+# •Temporary credential request URI: https://evernoteHost/oauth
+# •Resource owner authorization URI: https://evernoteHost/OAuth.action
+# •Token request URI: https://evernoteHost/oauth
+# •Security: HTTPS for all requests
+# •Supported signature methods: PLAINTEXT & HMAC-SHA1
+# •Supported OAuth parameter locations: HTTP Authorization header & request URI query parameters
+
             consumer = oauth.Consumer(CONSUMER_KEY, CONSUMER_SECRET)
             client = oauth.Client(consumer, proxy_info=get_oauth_proxy('https'))
+            
             resp, content = client.request(
                 'https://%s/oauth?oauth_callback=' % HOST + urllib.quote('http://everpad/'),
             'GET')
+            
             data = dict(urlparse.parse_qsl(content))
+            
             url = 'http://%s/OAuth.action?oauth_token=' % HOST + urllib.quote(data['oauth_token'])
+            
             page = AuthPage(
                 data['oauth_token'], data['oauth_token_secret'], self,
             )
+            
+            
             self.ui.webView.setPage(page)
             page.mainFrame().load(url)
 
