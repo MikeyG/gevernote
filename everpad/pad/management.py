@@ -238,6 +238,8 @@ class Management(QDialog):
             int(self.ui.syncDelayBox.itemData(index)),
         )
 
+    
+    # change evernote account authorization    
     @Slot()
     def change_auth(self):
         if self.app.provider.is_authenticated():
@@ -252,11 +254,13 @@ class Management(QDialog):
             )
             ret = msgBox.exec_()
             if ret == QMessageBox.Yes:
+                # daemon.py
                 self.app.provider.remove_authentication()
                 self.update_tabs()
         else:
             self.ui.tabWidget.hide()
             self.ui.webView.show()
+            
             consumer = oauth.Consumer(CONSUMER_KEY, CONSUMER_SECRET)
             client = oauth.Client(consumer, proxy_info=get_oauth_proxy('https'))
             resp, content = client.request(

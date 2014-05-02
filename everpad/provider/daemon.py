@@ -58,9 +58,12 @@ class ProviderApp(AppClass):
         self.sync_thread.data_changed.connect(
             Slot()(self.service.data_changed),
         )
-        
+                
         if get_auth_token():
+            print("Auth token")
             self.sync_thread.start()
+        else:        
+            print("No auth token")
         
         # on_authenticated @Slot
         self.service.qobject.authenticate_signal.connect(

@@ -185,7 +185,7 @@ class PullNotebook(BaseSync):
                         break
                     yield srv_notebooks
             except:
-            	pass
+            	self.app.log("oops")
             	
             # Here chunkHighUSN is the highest USN returned by the current
             # getFilteredSyncChunk call.  If chunkHighUSN == chunk_end then
