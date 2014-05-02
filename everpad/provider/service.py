@@ -530,7 +530,10 @@ class ProviderService(dbus.service.Object):
             self.app.sync_thread.force_sync()
         self.data_changed()
 
-    #*** dbus
+    #************************************************
+    #   remove_authenticate
+    #   call   self.app.provider.remove_authentication()
+    #   No return
     @dbus.service.method(
         "com.everpad.Provider",
         in_signature='', out_signature='',
@@ -540,7 +543,10 @@ class ProviderService(dbus.service.Object):
         self.qobject.remove_authenticate_signal.emit()
         self.data_changed()
 
-    #*** dbus
+    #************************************************
+    #   is_authenticated
+    #   call   self.app.provider.is_authenticated()
+    #   Return bool  true if authenticated false if not
     @dbus.service.method(
         "com.everpad.Provider",
         in_signature='', out_signature='b',
