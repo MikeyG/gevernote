@@ -108,7 +108,7 @@ class PullTag(BaseSync):
                     break
 
                 # If we get here the note has been created
-                self.app.log("Tag updated")
+                # self.app.log("Tag updated")
                 
             except NoResultFound:
                 
@@ -120,7 +120,7 @@ class PullTag(BaseSync):
                     break
                 
                 # If we get here the note has been created
-                self.app.log("Tag created")
+                # self.app.log("Tag created")
                 
             self._exists.append(tag.id)
 

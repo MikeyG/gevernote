@@ -17,14 +17,14 @@ class PullSearch(BaseSync):
     #    self.note_store, self.user_store
     #
     def __init__(self, *args, **kwargs):
-        super(PullLBN, self).__init__(*args, **kwargs)
+        super(PullSearch, self).__init__(*args, **kwargs)
         self._exists = []
 
     def pull(self, chunk_start_after, chunk_end):
         """Pull tags from server"""
 
         # okay, so _get_all_lbn uses a generator to yield each record
-        for search_meta_ttype in self._get_all_lbn(chunk_start_after, chunk_end):
+        for search_meta_ttype in self._get_all_search(chunk_start_after, chunk_end):
 
             # EEE Rate limit from _get_all_notes then break
             if SyncStatus.rate_limit:

@@ -4,7 +4,6 @@ from everpad.tools import sanitize
 from evernote.edam.error.ttypes import EDAMUserException, EDAMSystemException, EDAMErrorCode
 from evernote.edam.limits import constants as limits
 from evernote.edam.type import ttypes
-from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
 from evernote.edam.notestore.ttypes import SyncChunk, SyncChunkFilter
 from ... import const
 from .. import models
@@ -288,7 +287,7 @@ class PullNote(BaseSync, ShareNoteMixin):
                     break
                 
                 # If we get here then the local note is current 
-                self.app.log("No update required")
+                # self.app.log("No update required")
                 
             except NoResultFound:
                 
@@ -300,7 +299,7 @@ class PullNote(BaseSync, ShareNoteMixin):
                     break
                 
                 # If we get here the note has been created
-                self.app.log("Note created")
+                # self.app.log("Note created")
                 
             # At this point note is the note as defind in models.py
             # add the note id to the _exists list
