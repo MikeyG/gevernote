@@ -379,7 +379,8 @@ class PullNote(BaseSync, ShareNoteMixin):
                         break
                     yield srv_note
             except:
-            	pass
+            	# check this - think maybe this needs a break?
+            	self.app.log("oops") 
 
             # Here chunkHighUSN is the highest USN returned by the current
             # getFilteredSyncChunk call.  If chunkHighUSN == chunk_end then

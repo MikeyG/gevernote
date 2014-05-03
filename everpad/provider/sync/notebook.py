@@ -124,17 +124,42 @@ class PullNotebook(BaseSync):
 
     def pull(self, chunk_start_after, chunk_end):
         """Receive notebooks from server"""
-                
-        # request and return all notebooks in Notebook structure
-        for notebook_ttype in self.note_store.listNotebooks(self.auth_token):
-            self.app.log(
-                'Pulling notebook "%s" from remote server.' % notebook_ttype.name)
 
+        # okay, so _get_all_tags uses a generator to yield each note
+        # _get_all_tags using getFilteredSyncChunk returns SyncChunk
+        for notebook_meta_ttype in self._get_all_notebooks(chunk_start_after, chunk_end):
+
+            # EEE Rate limit from _get_all_notes then break
+            if SyncStatus.rate_limit:
+                break
+
+            self.app.log(
+                'Pulling notebook "%s" from remote server.' % notebook_meta_ttype.name)                
+                
             try:
-                notebook = self._update_notebook(notebook_ttype)
+                # check if notebook exists and if needs update
+                # also handle conflicts
+                notebook = self._update_notebook(notebook_meta_ttype)
+                
+                # EEE Rate limit from _update_tag then break
+                if SyncStatus.rate_limit:
+                    break
+
+                # If we get here the note has been created
+                self.app.log("Notebook updated")
+                
             except NoResultFound:
-                notebook = self._create_notebook(notebook_ttype)
-            
+                
+                # the tag is not in the local database so create
+                notebook = self._create_notebook(notebook_meta_ttype)
+
+                # EEE Rate limit from _create_notebook then break
+                if SyncStatus.rate_limit:
+                    break
+                
+                # If we get here the note has been created
+                self.app.log("Notebook created")
+         
             self._exists.append(notebook.id)
 
         # commit local changes
@@ -185,6 +210,7 @@ class PullNotebook(BaseSync):
                         break
                     yield srv_notebooks
             except:
+            	# check this - think maybe this needs a break?
             	self.app.log("oops")
             	
             # Here chunkHighUSN is the highest USN returned by the current
