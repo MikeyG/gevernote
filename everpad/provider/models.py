@@ -380,6 +380,20 @@ class LNB(Base):
 
     def from_api(self, linkednb):
         """Fill data from api"""
+        
+        self.guid = linkednb.guid
+        self.shareName = linkednb.shareName
+        self.username = linkednb.username
+        self.shardId = linkednb.shardId
+        self.shareKey = linkednb.shareKey
+        self.uri = linkednb.uri
+        self.noteStoreUrl = Column(String)
+                
+        if linkednb.stack:
+            self.stack = linkednb.stack.decode('utf8')        
+        # self.businessId = Column(Integer) 
+        
+        self.action = const.ACTION_NONE
 
     
 # *************************************************************
