@@ -4,7 +4,7 @@ from datetime import datetime
 from ... import const
 from ...specific import AppClass
 from .. import tools
-from . import note, notebook, tag
+from . import note, notebook, tag, notebooklinked, savedsearch
 from .. import models
 import time
 import traceback
@@ -394,12 +394,12 @@ class SyncThread(QtCore.QThread):
         note.PullNote(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
 
         # Linked Notebooks
-        # self.sync_state_changed.emit(const.SYNC_STATE_LBN_REMOTE)
-        # notebooklinked.PullLBN(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
+        self.sync_state_changed.emit(const.SYNC_STATE_LBN_REMOTE)
+        notebooklinked.PullLBN(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
         
         # Searches
-        # self.sync_state_changed.emit(const.SYNC_STATE_SEARCHES_REMOTE)
-        # savedsearch.PullSearch(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
+        self.sync_state_changed.emit(const.SYNC_STATE_SEARCHES_REMOTE)
+        savedsearch.PullSearch(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
 
     # ******** Process Local Changes *********
     # Send all changes to server (evernote) 

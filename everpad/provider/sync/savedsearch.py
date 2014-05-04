@@ -22,7 +22,9 @@ class PullSearch(BaseSync):
 
     def pull(self, chunk_start_after, chunk_end):
         """Pull tags from server"""
-
+        
+        self.app.log("Saved searches")
+        
         # okay, so _get_all_lbn uses a generator to yield each record
         for search_meta_ttype in self._get_all_search(chunk_start_after, chunk_end):
 
@@ -31,7 +33,9 @@ class PullSearch(BaseSync):
                 break
             
             self.app.log(
-                'Pulling search "%s" from remote server.' % search_meta_ttype.name) 
+                'Pulling search "%s" from remote server.' % search_meta_ttype.name)
+            
+            self.app.log("Saved searches done") 
 
         # @@@@ This file is just a stub
 
