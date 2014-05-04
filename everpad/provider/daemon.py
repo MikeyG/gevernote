@@ -59,6 +59,7 @@ class ProviderApp(AppClass):
             Slot()(self.service.data_changed),
         )
                 
+        # debug laptop        
         if get_auth_token():
             print("Auth token")
             self.sync_thread.start()
@@ -77,6 +78,7 @@ class ProviderApp(AppClass):
         
         # *****  Configure logger.
         # https://docs.python.org/2/library/logging.html
+        print("pre logging.getLogger")
         self.logger = logging.getLogger('everpad-provider')
         
         self.logger.setLevel(logging.DEBUG)
