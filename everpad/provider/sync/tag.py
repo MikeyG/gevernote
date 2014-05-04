@@ -106,9 +106,8 @@ class PullTag(BaseSync):
                 # EEE Rate limit from _update_tag then break
                 if SyncStatus.rate_limit:
                     break
-
                 # If we get here the note has been created
-                # self.app.log("Tag updated")
+
                 
             except NoResultFound:
                 
@@ -118,12 +117,9 @@ class PullTag(BaseSync):
                 # EEE Rate limit from _create_tag then break
                 if SyncStatus.rate_limit:
                     break
-                
                 # If we get here the note has been created
-                # self.app.log("Tag created")
                 
             self._exists.append(tag.id)
-
 
         self.session.commit()
         self._remove_tags()
@@ -170,8 +166,9 @@ class PullTag(BaseSync):
                         break
                     yield srv_tag
             except:
-            	pass
-            	
+            	if sync_chunk.chunkHighUSN == sync_chunk.updateCount:
+            	    break 
+
             # Here chunkHighUSN is the highest USN returned by the current
             # getFilteredSyncChunk call.  If chunkHighUSN == chunk_end then
             # we have received all Note structures on the server so break.
@@ -179,10 +176,7 @@ class PullTag(BaseSync):
             # chunk_start_after set to chunkHighUSN which will retrieve 
             # starting at chunkHighUSN+1 to chunk_end when calling 
             # getFilteredSyncChunk again - got it?
-            if sync_chunk.chunkHighUSN == sync_chunk.updateCount:
-                break
-            else:
-                chunk_start_after = sync_chunk.chunkHighUSN
+            chunk_start_after = sync_chunk.chunkHighUSN
 
     # new tag
     def _create_tag(self, tag_ttype):

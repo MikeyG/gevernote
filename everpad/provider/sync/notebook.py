@@ -144,9 +144,7 @@ class PullNotebook(BaseSync):
                 # EEE Rate limit from _update_tag then break
                 if SyncStatus.rate_limit:
                     break
-
                 # If we get here the note has been created
-                self.app.log("Notebook updated")
                 
             except NoResultFound:
                 
@@ -156,9 +154,7 @@ class PullNotebook(BaseSync):
                 # EEE Rate limit from _create_notebook then break
                 if SyncStatus.rate_limit:
                     break
-                
                 # If we get here the note has been created
-                self.app.log("Notebook created")
          
             self._exists.append(notebook.id)
 
@@ -210,9 +206,9 @@ class PullNotebook(BaseSync):
                         break
                     yield srv_notebooks
             except:
-            	# check this - think maybe this needs a break?
-            	self.app.log("oops")
-            	
+            	if sync_chunk.chunkHighUSN == sync_chunk.updateCount:
+            	    break 
+
             # Here chunkHighUSN is the highest USN returned by the current
             # getFilteredSyncChunk call.  If chunkHighUSN == chunk_end then
             # we have received all Note structures on the server so break.
@@ -220,10 +216,7 @@ class PullNotebook(BaseSync):
             # chunk_start_after set to chunkHighUSN which will retrieve 
             # starting at chunkHighUSN+1 to chunk_end when calling 
             # getFilteredSyncChunk again - got it?
-            if sync_chunk.chunkHighUSN == sync_chunk.updateCount:
-                break
-            else:
-                chunk_start_after = sync_chunk.chunkHighUSN
+            chunk_start_after = sync_chunk.chunkHighUSN
 
     # ************** Update Notebook **************
     #

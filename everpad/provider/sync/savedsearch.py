@@ -79,7 +79,8 @@ class PullSearch(BaseSync):
                         break
                     yield srv_search
             except:
-            	pass
+            	if sync_chunk.chunkHighUSN == sync_chunk.updateCount:
+            	    break 
 
             # Here chunkHighUSN is the highest USN returned by the current
             # getFilteredSyncChunk call.  If chunkHighUSN == chunk_end then
@@ -88,7 +89,6 @@ class PullSearch(BaseSync):
             # chunk_start_after set to chunkHighUSN which will retrieve 
             # starting at chunkHighUSN+1 to chunk_end when calling 
             # getFilteredSyncChunk again - got it?
-            if sync_chunk.chunkHighUSN == sync_chunk.updateCount:
-                break
-            else:
-                chunk_start_after = sync_chunk.chunkHighUSN
+            chunk_start_after = sync_chunk.chunkHighUSN
+            
+
