@@ -349,7 +349,39 @@ class Tag(Base):
         self.parentGuid = tag.parentGuid
         self.action = const.ACTION_NONE
 
+# *************************************************************
+# Searches ORM class to save data to the database
+#
+# Struct: LinkedNotebook
+# shareName	string
+# username	string
+# shardId	string
+# shareKey	string
+# uri	string
+# guid	Guid
+# noteStoreUrl	string
+# stack	string
+# businessId	i32
 
+class LNB(Base):
+    __tablename__ = 'linkednotebook'
+    id = Column(Integer, primary_key=True)
+    guid = Column(String)
+    shareName = Column(String)
+    username = Column(String)
+    shardId = Column(String)
+    shareKey = Column(String)
+    uri = Column(String)
+    noteStoreUrl = Column(String)
+    stack = Column(String) 
+    businessId = Column(Integer) 
+    # local use
+    action = Column(Integer)    
+
+    def from_api(self, linkednb):
+        """Fill data from api"""
+
+    
 # *************************************************************
 # Searches ORM class to save data to the database
 #
