@@ -3,6 +3,7 @@ sys.path.insert(0, '../..')
 from PySide.QtCore import Slot, QTranslator, QLocale, Signal, QSettings, QT_TRANSLATE_NOOP, QLibraryInfo
 from PySide.QtGui import QApplication, QSystemTrayIcon, QMenu, QCursor
 from PySide.QtNetwork import QNetworkProxyFactory
+
 from everpad.basetypes import Note, NONE_ID, NONE_VAL, Notebook
 from everpad.tools import get_provider, get_pad, print_version, resource_filename
 from everpad.pad.editor import Editor
@@ -14,6 +15,7 @@ from everpad.const import (
     DEFAULT_INDICATOR_LAYOUT,
 )
 from everpad.specific import get_launcher, get_tray_icon
+
 from functools import partial
 from datetime import datetime
 import signal

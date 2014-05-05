@@ -517,7 +517,10 @@ class ProviderService(dbus.service.Object):
         self.data_changed()
         return btype.Notebook >> notebook
 
-    #*** dbus
+    #************************************************
+    #   authenticate    
+    #   call   self.app.provider.authenticate( token )
+    #   No return    
     @dbus.service.method(
         "com.everpad.Provider",
         in_signature='s', out_signature='',

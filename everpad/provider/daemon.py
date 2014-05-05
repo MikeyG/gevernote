@@ -78,15 +78,20 @@ class ProviderApp(AppClass):
         
         # *****  Configure logger.
         # https://docs.python.org/2/library/logging.html
-        print("pre logging.getLogger")
+        # good ref: 
+        # http://victorlin.me/posts/2012/08/26/good-logging-practice-in-python
+        
+        logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger('everpad-provider')
         
+        print("pre logging.getLogger")
+    
         self.logger.setLevel(logging.DEBUG)
-        
+        print("pre logging.getLogger1")        
         fh = logging.FileHandler(
             os.path.expanduser('~/.everpad/logs/everpad-provider.log'))
         fh.setLevel(logging.DEBUG)
-        
+        print("pre logging.getLogger2")        
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         fh.setFormatter(formatter)
