@@ -296,13 +296,16 @@ class Management(QDialog):
                     self,
                 )
             
-                oauth_verifier = 
+                self.ui.webView.setPage(page)
+                page.mainFrame().load(url)
+                
+                #oauth_verifier = 
             
-                returned_token = client.get_access_token(
-                    request_token['oauth_token'], 
-                    request_token['oauth_token_secret'],
-                    oauth_verifier
-                )
+                #returned_token = client.get_access_token(
+                #    request_token['oauth_token'], 
+                #    request_token['oauth_token_secret'],
+                #    oauth_verifier
+                #)
             else:
                 print("Bad callback")
             
@@ -323,8 +326,7 @@ class Management(QDialog):
             )
             """
 
-            self.ui.webView.setPage(page)
-            page.mainFrame().load(url)
+            
 
     @Slot()
     def close_clicked(self):
