@@ -68,6 +68,8 @@ def auth_geverpad_token():
     #   -oauth_token_secret
     #   -oauth_callback_confirmed
     request_token = client.get_request_token("http://everpad/")
+    
+    # https://www.evernote.com/OAuth.action?oauth_token=<token>
     url = client.get_authorize_url(request_token)
     
     return request_token, url
