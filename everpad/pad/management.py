@@ -289,19 +289,22 @@ class Management(QDialog):
             request_token = client.get_request_token("http://everpad/")
             url = client.get_authorize_url(request_token)
             
-            page = AuthPage(
-                request_token['oauth_token'], 
-                request_token['oauth_token_secret'], 
-                self,
-            )
+            if request_token['oauth_callback_confirmed']:
+                page = AuthPage(
+                    request_token['oauth_token'], 
+                    request_token['oauth_token_secret'], 
+                    self,
+                )
             
-            oauth_verifier = 
+                oauth_verifier = 
             
-            returned_token = client.get_access_token(
-                request_token['oauth_token'], 
-                request_token['oauth_token_secret'],
-                oauth_verifier
-            )
+                returned_token = client.get_access_token(
+                    request_token['oauth_token'], 
+                    request_token['oauth_token_secret'],
+                    oauth_verifier
+                )
+            else:
+                print("Bad callback")
             
             """
             consumer = oauth.Consumer(CONSUMER_KEY, CONSUMER_SECRET)
