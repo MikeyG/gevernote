@@ -55,6 +55,7 @@ def auth_geverpad_token():
 # •Security: HTTPS for all requests
 # •Supported signature methods: PLAINTEXT & HMAC-SHA1
 # •Supported OAuth parameter locations: HTTP Authorization header & request URI query parameters
+# http://tools.ietf.org/html/rfc5849
 
     client = EvernoteClient(
         consumer_key=CONSUMER_KEY,
