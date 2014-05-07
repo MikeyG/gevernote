@@ -11,6 +11,12 @@ from ..tools import get_proxy_config
 from ..specific import get_keyring
 import os
 
+from everpad.const import (
+    CONSUMER_KEY, CONSUMER_SECRET,
+)
+from evernote.api.client import EvernoteClient
+
+
 # change item to lower case
 # used local only
 def _nocase_lower(item):
