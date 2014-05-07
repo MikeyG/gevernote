@@ -46,23 +46,13 @@ class TLSNetworkAccessManager(QNetworkAccessManager):
         request.setSslConfiguration(conf)
         return QNetworkAccessManager.createRequest(self, op, request, outgoingData)
 
-class OauthPage(QWebPage):
-    def __init__(self, parent, *args, **kwargs):
-        QWebPage.__init__(self, *args, **kwargs)
-        manager = TLSNetworkAccessManager(self)
-        manager.sslErrors.connect(self.ssl)
-        self.setNetworkAccessManager(manager)
-        
-    def acceptNavigationRequest(self, frame, request, type):
-        url = request.url()
-        if 'everpad' in url.host():
-            verifier = url.queryItemValue('oauth_verifier')            
 
 class AuthPage(QWebPage):
-    def __init__(self, token, secret, parent, *args, **kwargs):
+    def __init__(self, token, secret, client, parent, *args, **kwargs):
         QWebPage.__init__(self, *args, **kwargs)
         self.token = token
         self.secret = secret
+        self.client = client
         self.parent = parent
         manager = TLSNetworkAccessManager(self)
         manager.sslErrors.connect(self.ssl)
@@ -71,7 +61,13 @@ class AuthPage(QWebPage):
     def acceptNavigationRequest(self, frame, request, type):
         url = request.url()
         if 'everpad' in url.host():
-            verifier = url.queryItemValue('oauth_verifier')
+            oauth_verifier = url.queryItemValue('oauth_verifier')
+            returned_token = client.get_access_token(
+                request_token['oauth_token'], 
+                request_token['oauth_token_secret'],
+                oauth_verifier
+            )
+ 
             token = oauth.Token(self.token, self.secret)
             token.set_verifier(verifier)
             consumer = oauth.Consumer(CONSUMER_KEY, CONSUMER_SECRET)
@@ -80,6 +76,10 @@ class AuthPage(QWebPage):
             resp, content = client.request('https://%s/oauth' % HOST, 'POST')
             access_token = dict(urlparse.parse_qsl(content))
             self.parent.auth_finished(access_token['oauth_token'])
+            
+            
+            
+            
         return True
 
     def ssl(self, reply, errors):
@@ -303,20 +303,13 @@ class Management(QDialog):
             if request_token['oauth_callback_confirmed']:
                 page = AuthPage(
                     request_token['oauth_token'], 
-                    request_token['oauth_token_secret'], 
+                    request_token['oauth_token_secret'],
+                    client,
                     self,
                 )
             
                 self.ui.webView.setPage(page)
                 page.mainFrame().load(url)
-                
-                #oauth_verifier = 
-            
-                #returned_token = client.get_access_token(
-                #    request_token['oauth_token'], 
-                #    request_token['oauth_token_secret'],
-                #    oauth_verifier
-                #)
             else:
                 print("Bad callback")
             
