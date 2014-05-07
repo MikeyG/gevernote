@@ -281,6 +281,21 @@ class Management(QDialog):
 # •Supported signature methods: PLAINTEXT & HMAC-SHA1
 # •Supported OAuth parameter locations: HTTP Authorization header & request URI query parameters
 
+            client = EvernoteClient(
+                consumer_key=CONSUMER_KEY,
+                consumer_secret =CONSUMER_SECRET,
+                sandbox=False
+            )
+            request_token = client.get_request_token("http://everpad/")
+            url = client.get_authorize_url(request_token)
+            
+            page = AuthPage(
+                request_token['oauth_token'], 
+                request_token['oauth_token_secret'], 
+                self,
+            )
+            
+            """
             consumer = oauth.Consumer(CONSUMER_KEY, CONSUMER_SECRET)
             client = oauth.Client(consumer, proxy_info=get_oauth_proxy('https'))
             
@@ -289,14 +304,14 @@ class Management(QDialog):
             'GET')
             
             data = dict(urlparse.parse_qsl(content))
-            
+
             url = 'http://%s/OAuth.action?oauth_token=' % HOST + urllib.quote(data['oauth_token'])
-            
+
             page = AuthPage(
                 data['oauth_token'], data['oauth_token_secret'], self,
             )
-            
-            
+            """
+
             self.ui.webView.setPage(page)
             page.mainFrame().load(url)
 
