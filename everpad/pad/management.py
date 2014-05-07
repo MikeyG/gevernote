@@ -46,6 +46,17 @@ class TLSNetworkAccessManager(QNetworkAccessManager):
         request.setSslConfiguration(conf)
         return QNetworkAccessManager.createRequest(self, op, request, outgoingData)
 
+class OauthPage(QWebPage):
+    def __init__(self, parent, *args, **kwargs):
+        QWebPage.__init__(self, *args, **kwargs)
+        manager = TLSNetworkAccessManager(self)
+        manager.sslErrors.connect(self.ssl)
+        self.setNetworkAccessManager(manager)
+        
+    def acceptNavigationRequest(self, frame, request, type):
+        url = request.url()
+        if 'everpad' in url.host():
+            verifier = url.queryItemValue('oauth_verifier')            
 
 class AuthPage(QWebPage):
     def __init__(self, token, secret, parent, *args, **kwargs):
