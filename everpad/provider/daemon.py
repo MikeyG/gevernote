@@ -1,6 +1,6 @@
 from .service import ProviderService
 from .sync.agent import SyncThread
-from .tools import set_auth_token, get_auth_token, get_db_session
+from .tools import set_auth_token, get_auth_token, auth_geverpad_token, get_db_session
 from ..specific import AppClass
 from ..tools import print_version
 from . import models
@@ -66,6 +66,10 @@ class ProviderApp(AppClass):
         else:        
             print("No auth token")
         
+       # provider_authenticate @Slot
+        self.service.qobject.authenticate_signal.connect(
+            self.provider_authenticate,
+        )
         # on_authenticated @Slot
         self.service.qobject.authenticate_signal.connect(
             self.on_authenticated,
@@ -99,6 +103,12 @@ class ProviderApp(AppClass):
         self.logger.addHandler(fh)
         self.logger.debug('Provider started.')
 
+    # add auth MKG
+    @Slot(str)
+    def provider_authenticate(self):
+        # auth_geverpad_token everpad/provider/tools.py 
+        oauth_result = auth_geverpad_token()
+        
     @Slot(str)
     def on_authenticated(self, token):
         # set_auth_token everpad/provider/tools.py 
