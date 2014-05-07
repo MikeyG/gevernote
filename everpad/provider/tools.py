@@ -49,7 +49,22 @@ I want to do this so provider handles all things evernote and the user programs 
 i.e. indicator ... pad do not talk to evernote.
 """
 def auth_geverpad_token():
-    return "XYZ"
+# •Temporary credential request URI: https://evernoteHost/oauth
+# •Resource owner authorization URI: https://evernoteHost/OAuth.action
+# •Token request URI: https://evernoteHost/oauth
+# •Security: HTTPS for all requests
+# •Supported signature methods: PLAINTEXT & HMAC-SHA1
+# •Supported OAuth parameter locations: HTTP Authorization header & request URI query parameters
+
+    client = EvernoteClient(
+        consumer_key=CONSUMER_KEY,
+        consumer_secret =CONSUMER_SECRET,
+        sandbox=False
+    )
+    request_token = client.get_request_token("http://everpad/")
+    url = client.get_authorize_url(request_token)
+    
+    return request_token, url
 
 
 # Setup database
