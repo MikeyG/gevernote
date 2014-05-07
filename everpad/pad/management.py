@@ -295,6 +295,14 @@ class Management(QDialog):
                 self,
             )
             
+            oauth_verifier = 
+            
+            returned_token = client.get_access_token(
+                request_token['oauth_token'], 
+                request_token['oauth_token_secret'],
+                oauth_verifier
+            )
+            
             """
             consumer = oauth.Consumer(CONSUMER_KEY, CONSUMER_SECRET)
             client = oauth.Client(consumer, proxy_info=get_oauth_proxy('https'))
