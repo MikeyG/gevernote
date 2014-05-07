@@ -62,6 +62,11 @@ def auth_geverpad_token():
         consumer_secret =CONSUMER_SECRET,
         sandbox=False
     )
+    
+    # request_token
+    #   -oauth_token
+    #   -oauth_token_secret
+    #   -oauth_callback_confirmed
     request_token = client.get_request_token("http://everpad/")
     url = client.get_authorize_url(request_token)
     
