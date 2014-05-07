@@ -34,6 +34,17 @@ def set_auth_token(token):
 def get_auth_token():
     return get_keyring().get_password('everpad', 'oauth_token')
 
+    
+"""
+This is the start of my next change.  I want to move the entire oauth to
+here, tools.py.  A call to auth_geverpad_token will authorize and get token.
+I want to do this so provider handles all things evernote and the user programs -
+i.e. indicator ... pad do not talk to evernote.
+"""
+def auth_geverpad_token():
+    return "XYZ"
+
+
 # Setup database
 # Ref:  http://docs.sqlalchemy.org/en/rel_0_9/orm/tutorial.html
 #       http://pypix.com/tools-and-tips/essential-sqlalchemy/
