@@ -21,6 +21,9 @@ import shutil
 from httplib2 import ProxyInfo
 from httplib2.socks import PROXY_TYPE_HTTP
 
+# temp
+from evernote.api.client import EvernoteClient
+
 
 def get_oauth_proxy(scheme):
     proxy = get_proxy_config(scheme)
