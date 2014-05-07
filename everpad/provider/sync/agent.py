@@ -10,7 +10,11 @@ import time
 import traceback
 import socket
 
+# Keep track of various sync errors, etc.
 from .base import SyncStatus
+
+from evernote.api.client import EvernoteClient
+
 
 """
     Rate Limit handling:
@@ -184,9 +188,17 @@ class SyncThread(QtCore.QThread):
         
         while True:
             try:
+            	 # pull token from keyring
                 self.auth_token = tools.get_auth_token()
-                self.note_store = tools.get_note_store(self.auth_token)
-                self.user_store = tools.get_user_store(self.auth_token)
+                
+                # use EvernoteClient() to get userstore and notestore
+                client = EvernoteClient(token=self.auth_token, sandbox=False)
+                self.user_store = client.get_user_store()
+                self.note_store = client.get_note_store()
+                
+                # self.note_store = tools.get_note_store(self.auth_token)
+                # self.user_store = tools.get_user_store(self.auth_token)
+
                 break
             except EDAMSystemException, e:
                 if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:

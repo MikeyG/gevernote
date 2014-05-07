@@ -54,33 +54,33 @@ def get_db_session(db_path=None):
 
 
 # MKG: Fixed to work with the v2.5 API  041314
-def get_user_store(auth_token=None):
+#def get_user_store(auth_token=None):
     
     # Get token if don't have it already
-    if not auth_token:
-        auth_token = get_auth_token()
+#    if not auth_token:
+#        auth_token = get_auth_token()
         
-    user_store_uri = "https://" + HOST + "/edam/user"
-    http_proxy=get_proxy_config(urlparse(user_store_uri).scheme)
+#    user_store_uri = "https://" + HOST + "/edam/user"
+#    http_proxy=get_proxy_config(urlparse(user_store_uri).scheme)
 
-    user_store_http_client = THttpClient.THttpClient(user_store_uri,None,None,http_proxy,None)
-    user_store_protocol = TBinaryProtocol.TBinaryProtocol(user_store_http_client)
+#    user_store_http_client = THttpClient.THttpClient(user_store_uri,None,None,http_proxy,None)
+#    user_store_protocol = TBinaryProtocol.TBinaryProtocol(user_store_http_client)
 
-    return UserStore.Client(user_store_protocol)
+#    return UserStore.Client(user_store_protocol)
 
 
 # MKG: Fixed to work with the v2.5 API  041314
-def get_note_store(auth_token=None):
+#def get_note_store(auth_token=None):
     
     # Get token if don't have it already
-    if not auth_token:
-        auth_token = get_auth_token()
+#    if not auth_token:
+#        auth_token = get_auth_token()
     
-    user_store = get_user_store(auth_token)
-    note_store_url = user_store.getNoteStoreUrl(auth_token)
-    http_proxy=get_proxy_config(urlparse(note_store_url).scheme)
+#    user_store = get_user_store(auth_token)
+#    note_store_url = user_store.getNoteStoreUrl(auth_token)
+#    http_proxy=get_proxy_config(urlparse(note_store_url).scheme)
 
-    note_store_http_client = THttpClient.THttpClient(note_store_url,None,None,http_proxy,None)
-    note_store_protocol = TBinaryProtocol.TBinaryProtocol(note_store_http_client)
+#    note_store_http_client = THttpClient.THttpClient(note_store_url,None,None,http_proxy,None)
+#    note_store_protocol = TBinaryProtocol.TBinaryProtocol(note_store_http_client)
 
-    return NoteStore.Client(note_store_protocol)
+#    return NoteStore.Client(note_store_protocol)
