@@ -130,6 +130,7 @@ class ProviderApp(AppClass):
     @Slot()
     def on_remove_authenticated(self):
     	  print("Remove Auth")
+    	self.sync_thread.timer.stop()
         self.sync_thread.quit()
         self.sync_thread.update_count = 0
 
