@@ -10,6 +10,8 @@ import dbus
 import dbus.service
 import time
 
+from evernote.edam.userstore.constants import EDAM_VERSION_MAJOR, EDAM_VERSION_MINOR
+
 
 class NoteFilterer(object):
     """Create list with wiltered and sorted notes"""
@@ -669,7 +671,10 @@ class ProviderService(dbus.service.Object):
             & (models.Notebook.default == True)
         ).count())
 
-    #*** dbus
+    #************************************************
+    #   Full Sync    
+    #   call   self.app.provider.sync(  )
+    #   Return Provider API version
     @dbus.service.method(
         "com.everpad.Provider", in_signature='',
         out_signature='i',
@@ -677,6 +682,21 @@ class ProviderService(dbus.service.Object):
     def get_api_version(self):
         """Get api version"""
         return const.API_VERSION
+
+    #************************************************
+    #   Full Sync    
+    #   call   self.app.provider.sync(  )
+    #   Return Provider API version
+    @dbus.service.method(
+        "com.everpad.Provider", in_signature='',
+        out_signature='i',
+    )
+    def get_api_version(self):
+        """Get EDAM version"""
+        return '%s.%s' % (
+            EDAM_VERSION_MAJOR,
+            EDAM_VERSION_MINOR
+        )
 
     #*** dbus
     @dbus.service.method(
