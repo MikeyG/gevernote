@@ -179,6 +179,9 @@ class SyncThread(QtCore.QThread):
         # set the rate limit indication to 0
         SyncStatus.rate_limit = 0
         
+        # flag to indicate full sync needed
+        self.sync_state.need_full_sync = 0
+        
     # Initialize Network
     # Get get_auth_token get_note_store get_user_store - tools.py
     def _init_network(self):
@@ -277,12 +280,9 @@ class SyncThread(QtCore.QThread):
         self.sync_state_changed.emit(const.SYNC_STATE_START)
 
         # update server sync info
-        self._get_sync_state()
-        
-        # temp:  --- just setting to true for testing MKG 042814
-        force_sync = 1
-        
-        if force_sync:
+        self._get_sync_state( )
+
+        if self.sync_state.need_full_sync:
             self.app.log("force_sync sync")
             # set update_count to 0 for full sync
             self.sync_state.update_count = 0
@@ -379,10 +379,13 @@ class SyncThread(QtCore.QThread):
                 # everpad-provider won't lock up and can try to sync up in the
                 # next run.        
 
-    # *** Force Sync ***
+    # ****************** Force Sync *********************
+    #         Handles self.app.provider.sync(  )
+    #
     def force_sync(self):
         """Start sync"""
         self.timer.stop()
+        self.sync_state.need_full_sync = 1
         self.sync()
         self.update_timer()
 
