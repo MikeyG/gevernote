@@ -305,23 +305,7 @@ class Management(QDialog):
                 page.mainFrame().load(url)
             else:
                 print("Bad callback")
-            
-            """
-            consumer = oauth.Consumer(CONSUMER_KEY, CONSUMER_SECRET)
-            client = oauth.Client(consumer, proxy_info=get_oauth_proxy('https'))
-            
-            resp, content = client.request(
-                'https://%s/oauth?oauth_callback=' % HOST + urllib.quote('http://everpad/'),
-            'GET')
-            
-            data = dict(urlparse.parse_qsl(content))
 
-            url = 'http://%s/OAuth.action?oauth_token=' % HOST + urllib.quote(data['oauth_token'])
-
-            page = AuthPage(
-                data['oauth_token'], data['oauth_token_secret'], self,
-            )
-            """
     @Slot()
     def close_clicked(self):
         self.close()
