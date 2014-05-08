@@ -241,8 +241,13 @@ class SyncThread(QtCore.QThread):
         while True:
             self.mutex.lock()
             self.wait_condition.wait(self.mutex)
-            # do sync ....
-            self.perform()
+            
+            if tools.get_auth_token():
+                # do sync ....
+                self.perform()
+            else:
+                self.app.log("I shouldn't even be here!")
+
             self.mutex.unlock()
             
             # sleep 1 second

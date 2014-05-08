@@ -62,23 +62,18 @@ class AuthPage(QWebPage):
         url = request.url()
         if 'everpad' in url.host():
             oauth_verifier = url.queryItemValue('oauth_verifier')
-            returned_token = client.get_access_token(
-                request_token['oauth_token'], 
-                request_token['oauth_token_secret'],
-                oauth_verifier
+            returned_token = self.client.get_access_token(
+                self.token, self.secret, oauth_verifier
             )
  
-            token = oauth.Token(self.token, self.secret)
-            token.set_verifier(verifier)
-            consumer = oauth.Consumer(CONSUMER_KEY, CONSUMER_SECRET)
-            client = oauth.Client(consumer, token,
-                                  proxy_info=get_oauth_proxy('https'))
-            resp, content = client.request('https://%s/oauth' % HOST, 'POST')
-            access_token = dict(urlparse.parse_qsl(content))
-            self.parent.auth_finished(access_token['oauth_token'])
-            
-            
-            
+            # token = oauth.Token(self.token, self.secret)
+            # token.set_verifier(verifier)
+            # consumer = oauth.Consumer(CONSUMER_KEY, CONSUMER_SECRET)
+            # client = oauth.Client(consumer, token,
+            #                       proxy_info=get_oauth_proxy('https'))
+            # resp, content = client.request('https://%s/oauth' % HOST, 'POST')
+            # access_token = dict(urlparse.parse_qsl(content))
+            self.parent.auth_finished(returned_token)
             
         return True
 
