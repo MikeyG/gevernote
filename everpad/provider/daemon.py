@@ -59,13 +59,17 @@ class ProviderApp(AppClass):
             Slot()(self.service.data_changed),
         )
                 
-        # debug laptop        
+        # Start Sync Thread if provider is authenticated        
         if get_auth_token():
             print("Auth token")
             self.sync_thread.start()
         else:        
             print("No auth token")
         
+       # ************************************************************
+       #    Authentication and Termination Signals Setup
+       # ************************************************************
+       
        # provider_authenticate @Slot
         self.service.qobject.authenticate_signal.connect(
             self.provider_authenticate,
@@ -80,7 +84,9 @@ class ProviderApp(AppClass):
         )
         self.service.qobject.terminate.connect(self.terminate)
         
-        # *****  Configure logger.
+        # ************************************************************
+        #                   Configure logger
+        # ************************************************************
         # https://docs.python.org/2/library/logging.html
         # good ref: 
         # http://victorlin.me/posts/2012/08/26/good-logging-practice-in-python
@@ -103,11 +109,17 @@ class ProviderApp(AppClass):
         self.logger.addHandler(fh)
         self.logger.debug('Provider started.')
 
+    # ************************************************************
+    #          Authentication and Termination 
+    # ************************************************************
+       
     # add auth MKG
     @Slot(str)
     def provider_authenticate(self):
         # auth_geverpad_token everpad/provider/tools.py 
         oauth_result = auth_geverpad_token()
+        
+    # get_auth_token --- see tools.py
         
     @Slot(str)
     def on_authenticated(self, token):
