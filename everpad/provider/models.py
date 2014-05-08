@@ -501,6 +501,7 @@ class Sync(Base):
     # local counts
     update_count = Column(Integer)          # USN current client count
     last_sync = Column(Integer)             # Last error free sync
+    need_full_sync = Column(Integer)
 
     # server sync info returned from getSyncState
     srv_current_time = Column(Integer)      # Current server time at call
