@@ -39,12 +39,7 @@ def get_oauth_proxy(scheme):
     )
 
 
-class TLSNetworkAccessManager(QNetworkAccessManager):
-    def createRequest(self, op, request, outgoingData=None):
-        conf = QSslConfiguration()
-        conf.setProtocol(QSsl.TlsV1)
-        request.setSslConfiguration(conf)
-        return QNetworkAccessManager.createRequest(self, op, request, outgoingData)
+
 
 
 class AuthPage(QWebPage):
@@ -65,20 +60,23 @@ class AuthPage(QWebPage):
             returned_token = self.client.get_access_token(
                 self.token, self.secret, oauth_verifier
             )
- 
-            # token = oauth.Token(self.token, self.secret)
-            # token.set_verifier(verifier)
-            # consumer = oauth.Consumer(CONSUMER_KEY, CONSUMER_SECRET)
-            # client = oauth.Client(consumer, token,
-            #                       proxy_info=get_oauth_proxy('https'))
-            # resp, content = client.request('https://%s/oauth' % HOST, 'POST')
-            # access_token = dict(urlparse.parse_qsl(content))
+
             self.parent.auth_finished(returned_token)
-            
         return True
 
     def ssl(self, reply, errors):
         reply.ignoreSslErrors()
+
+class TLSNetworkAccessManager(QNetworkAccessManager):
+    def createRequest(self, op, request, outgoingData=None):
+        conf = QSslConfiguration()
+        conf.setProtocol(QSsl.TlsV1)
+        request.setSslConfiguration(conf)
+        return QNetworkAccessManager.createRequest(self, op, request, outgoingData)
+
+
+
+
 
 
 class Management(QDialog):
@@ -324,9 +322,6 @@ class Management(QDialog):
                 data['oauth_token'], data['oauth_token_secret'], self,
             )
             """
-
-            
-
     @Slot()
     def close_clicked(self):
         self.close()
