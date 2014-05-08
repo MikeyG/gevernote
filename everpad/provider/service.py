@@ -623,7 +623,10 @@ class ProviderService(dbus.service.Object):
         """Get last sync date"""
         return self.app.sync_thread.last_sync.strftime('%H:%M')
 
-    #*** dbus
+    #************************************************
+    #   Full Sync    
+    #   call   self.app.provider.sync(  )
+    #   No return 
     @dbus.service.method(
         "com.everpad.Provider",
         in_signature='', out_signature='',
