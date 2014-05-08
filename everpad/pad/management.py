@@ -39,9 +39,10 @@ def get_oauth_proxy(scheme):
     )
 
 
-
-
-
+# **********************************************************************
+#        Oauth web interface to get user name and password
+#
+# **********************************************************************
 class AuthPage(QWebPage):
     def __init__(self, token, secret, client, parent, *args, **kwargs):
         QWebPage.__init__(self, *args, **kwargs)
@@ -60,7 +61,6 @@ class AuthPage(QWebPage):
             returned_token = self.client.get_access_token(
                 self.token, self.secret, oauth_verifier
             )
-
             self.parent.auth_finished(returned_token)
         return True
 
