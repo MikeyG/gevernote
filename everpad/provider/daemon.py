@@ -208,6 +208,9 @@ def main():
         # allows this script to receive DBus calls
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         
+        # SlavikZ - Fix occasional everpad-provider segfaults 050814
+        dbus.mainloop.glib.threads_init()
+        
         app = ProviderApp(args.verbose, sys.argv)
         app.exec_()
     
