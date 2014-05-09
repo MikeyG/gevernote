@@ -214,6 +214,8 @@ def main():
         # Initialize threads in dbus-glib, if this has not already been done.
         dbus.mainloop.glib.threads_init()
         
+        # http://stackoverflow.com/questions/22390064/use-dbus-to-just-send-a-message-in-python
+        
         app = ProviderApp(args.verbose, sys.argv)
         app.exec_()
     
