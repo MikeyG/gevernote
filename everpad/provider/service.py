@@ -687,16 +687,16 @@ class ProviderService(dbus.service.Object):
     #   Full Sync    
     #   call   self.app.provider.sync(  )
     #   Return Provider API version
-    @dbus.service.method(
-        "com.everpad.Provider", in_signature='',
-        out_signature='i',
-    )
-    def get_api_version(self):
-        """Get EDAM version"""
-        return '%s.%s' % (
-            EDAM_VERSION_MAJOR,
-            EDAM_VERSION_MINOR
-        )
+#    @dbus.service.method(
+#        "com.everpad.Provider", in_signature='',
+#        out_signature='i',
+#    )
+#    def get_api_version(self):
+#        """Get EDAM version"""
+#        return '%s.%s' % (
+#            EDAM_VERSION_MAJOR,
+#            EDAM_VERSION_MINOR
+#        )
 
     #*** dbus
     @dbus.service.method(

@@ -335,7 +335,11 @@ class SyncThread(QtCore.QThread):
 
             # if we get a good finish - update the count to match server
             self.sync_state.update_count = self.sync_state.srv_update_count
+            # last sync date/time set to current
             self.sync_state.last_sync = datetime.now( )
+            # set need_full_sync false so incremental updates will happen
+            self.sync_state.need_full_sync =0
+            # tell everyone we are done
             self.data_changed.emit()
             self.status = const.STATUS_NONE
             self.sync_state_changed.emit(const.SYNC_STATE_FINISH)
@@ -380,7 +384,9 @@ class SyncThread(QtCore.QThread):
                 # next run.        
 
     # ****************** Force Sync *********************
-    #         Handles self.app.provider.sync(  )
+    # Handles self.app.provider.sync(  )
+    # This is a sync started by and external trigger so 
+    # need_full_sync will be true
     #
     def force_sync(self):
         """Start sync"""
@@ -404,19 +410,27 @@ class SyncThread(QtCore.QThread):
         # Notebooks
         self.sync_state_changed.emit(const.SYNC_STATE_NOTEBOOKS_REMOTE)
         notebook.PullNotebook(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
-        
+        if SyncStatus.rate_limit:
+            return
+        	
         # Tags
         self.sync_state_changed.emit(const.SYNC_STATE_TAGS_REMOTE)
         tag.PullTag(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
-
+        if SyncStatus.rate_limit:
+            return
+            
         # Notes and Resources
         self.sync_state_changed.emit(const.SYNC_STATE_NOTES_REMOTE)
         note.PullNote(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
-
+        if SyncStatus.rate_limit:
+            return
+            
         # Linked Notebooks
         self.sync_state_changed.emit(const.SYNC_STATE_LBN_REMOTE)
         notebooklinked.PullLBN(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
-        
+        if SyncStatus.rate_limit:
+            return
+                    
         # Searches
         self.sync_state_changed.emit(const.SYNC_STATE_SEARCHES_REMOTE)
         savedsearch.PullSearch(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
@@ -431,11 +445,15 @@ class SyncThread(QtCore.QThread):
         # Notebooks
         self.sync_state_changed.emit(const.SYNC_STATE_NOTEBOOKS_LOCAL)
         notebook.PushNotebook(*self._get_sync_args()).push()
-
+        if SyncStatus.rate_limit:
+            return
+            
         # Tags
         self.sync_state_changed.emit(const.SYNC_STATE_TAGS_LOCAL)
         tag.PushTag(*self._get_sync_args()).push()
-
+        if SyncStatus.rate_limit:
+            return
+            
         # Notes and Resources
         self.sync_state_changed.emit(const.SYNC_STATE_NOTES_LOCAL)
         note.PushNote(*self._get_sync_args()).push()
