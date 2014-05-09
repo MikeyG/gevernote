@@ -210,6 +210,8 @@ def main():
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         
         # SlavikZ - Fix occasional everpad-provider segfaults 050814
+        # http://dbus.freedesktop.org/doc/dbus-python/api/dbus.mainloop.glib-module.html
+        # Initialize threads in dbus-glib, if this has not already been done.
         dbus.mainloop.glib.threads_init()
         
         app = ProviderApp(args.verbose, sys.argv)
