@@ -96,18 +96,19 @@ class ProviderApp(AppClass):
         
         print("pre logging.getLogger")
     
-        self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
         print("pre logging.getLogger1")        
         fh = logging.FileHandler(
             os.path.expanduser('~/.everpad/logs/everpad-provider.log'))
         fh.setLevel(logging.DEBUG)
         print("pre logging.getLogger2")        
+        
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         fh.setFormatter(formatter)
         
         self.logger.addHandler(fh)
-        self.logger.debug('Provider started.')
+        self.logger.info('Provider started.')
 
     # ************************************************************
     #          Authentication and Termination 
@@ -153,11 +154,14 @@ class ProviderApp(AppClass):
         )
         session.commit()
 
+    # Handles verbose option to output data to console
+    # in addition to file
     def log(self, data):
         self.logger.debug(data)
         if self.verbose:
             print data
 
+    # stop SyncThread 
     @Slot()
     def terminate(self):
         self.sync_thread.quit()
