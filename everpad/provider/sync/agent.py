@@ -263,7 +263,7 @@ class SyncThread(QtCore.QThread):
     def perform(self):
         """Perform all sync"""
         
-        self.app.log("Execute perform( )")
+        self.app.log.info("Execute perform( )")
 
         # A good place to check and wait if rate limited
         if SyncStatus.rate_limit:
@@ -287,7 +287,7 @@ class SyncThread(QtCore.QThread):
             # set update_count to 0 for full sync
             self.sync_state.update_count = 0
             need_to_update = True            
-        elif self.sync_state.srv_fullSyncBefore < self.sync_state.srv_current_time:
+        elif self.sync_state.srv_fullSyncBefore > self.sync_state.srv_current_time:
             # Full sync needed
             self.app.log("fullSyncBefore sync")
             # set update_count to 0 for full sync
