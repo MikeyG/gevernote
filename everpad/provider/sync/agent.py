@@ -263,7 +263,7 @@ class SyncThread(QtCore.QThread):
     def perform(self):
         """Perform all sync"""
         
-        self.app.log.info("Execute perform( )")
+        self.app.log("Execute perform( )")
 
         # A good place to check and wait if rate limited
         if SyncStatus.rate_limit:

@@ -212,10 +212,13 @@ class Note(Base):
         self.action = const.ACTION_NONE
         
         # shouldn't there always be a notebook guid????
-        if note.notebookGuid:
-            self.notebook = session.query(Notebook).filter(
-                Notebook.guid == note.notebookGuid,
-            ).one()
+        try:        
+            if note.notebookGuid:
+                self.notebook = session.query(Notebook).filter(
+                    Notebook.guid == note.notebookGuid,
+                ).one()
+        except NoResultFound:
+            print note.notebookGuid        	
             
         # note tags    
         if note.tagGuids:
