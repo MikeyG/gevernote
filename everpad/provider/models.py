@@ -218,7 +218,11 @@ class Note(Base):
                     Notebook.guid == note.notebookGuid,
                 ).one()
         except NoResultFound:
-            print note.notebookGuid        	
+            print note.notebookGuid
+            self.shit = session.query(Notebook).filter(
+                Notebook.guid),
+            ).all()
+            
             
         # note tags    
         if note.tagGuids:
