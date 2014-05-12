@@ -172,13 +172,20 @@ class PushNote(BaseSync, ShareNoteMixin):
         try:
             note_ttype = self.note_store.createNote(self.auth_token, note_ttype)
             note.guid = note_ttype.guid
+            note.action = const.ACTION_NON
 
-        except EDAMUserException as e:
+        except EDAMUserException as edue:
+		    ## Something was wrong with the note data
+		    ## See EDAMErrorCode enumeration for error code explanation
+		    ## http://dev.evernote.com/documentation/reference/Errors.html#Enum_EDAMErrorCode
             note.action = const.ACTION_NONE
             self.app.log('Push new note "%s" failed.' % note.title)
-            self.app.log(e)
-        finally:
+            self.app.log(edue)
+        except Errors.EDAMNotFoundException, ednfe:
+            ## Parent Notebook GUID doesn't correspond to an actual notebook
             note.action = const.ACTION_NONE
+            self.app.log('Push new note "%s" failed.' % note.title)
+            self.app.log("EDAMNotFoundException: Invalid parent notebook GUID")
 
     # **************** Create Note ****************
     # Uses API call
