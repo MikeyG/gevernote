@@ -175,9 +175,9 @@ class PushNote(BaseSync, ShareNoteMixin):
             note.action = const.ACTION_NON
 
         except EDAMUserException as edue:
-		    ## Something was wrong with the note data
-		    ## See EDAMErrorCode enumeration for error code explanation
-		    ## http://dev.evernote.com/documentation/reference/Errors.html#Enum_EDAMErrorCode
+            ## Something was wrong with the note data
+	    ## See EDAMErrorCode enumeration for error code explanation
+	    ## http://dev.evernote.com/documentation/reference/Errors.html#Enum_EDAMErrorCode
             note.action = const.ACTION_NONE
             self.app.log('Push new note "%s" failed.' % note.title)
             self.app.log(edue)
