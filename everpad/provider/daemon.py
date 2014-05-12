@@ -7,6 +7,7 @@ from . import models
 from PySide.QtCore import Slot, QSettings
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
+import sqlalchemy
 # import dbus.mainloop.glib
 import signal
 import fcntl
@@ -108,7 +109,13 @@ class ProviderApp(AppClass):
         fh.setFormatter(formatter)
         
         self.logger.addHandler(fh)
-        self.logger.info('Provider started.')
+        
+        # self.logger.info('Provider started.')
+        
+        log('Provider started.')
+
+        log("sqlalchemy %s" % sqlalchemy.__version__)
+        
 
     # ************************************************************
     #          Authentication and Termination 
