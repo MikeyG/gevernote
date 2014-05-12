@@ -173,7 +173,10 @@ class PushNote(BaseSync, ShareNoteMixin):
             note_ttype = self.note_store.createNote(self.auth_token, note_ttype)
             note.guid = note_ttype.guid
             note.action = const.ACTION_NON
-
+        except EDAMSystemException, e:
+            if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
+            	self.app.log("Rate limit _push_changed_note: %d seconds" % e.rateLimitDuration)
+            	self.sync_state.rate_limit = e.rateLimitDuration
         except EDAMUserException as edue:
             ## Something was wrong with the note data
 	    ## See EDAMErrorCode enumeration for error code explanation
