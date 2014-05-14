@@ -112,9 +112,9 @@ class ProviderApp(AppClass):
         
         # self.logger.info('Provider started.')
         
-        log('Provider started.')
+        #log('Provider started.')
 
-        log("sqlalchemy %s" % sqlalchemy.__version__)
+        #log("sqlalchemy %s" % sqlalchemy.__version__)
         
 
     # ************************************************************

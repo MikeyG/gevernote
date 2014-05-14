@@ -220,8 +220,7 @@ class Note(Base):
         except NoResultFound:
             print note.notebookGuid
             self.shit = session.query(Notebook).filter(
-                Notebook.guid),
-            ).all()
+                Notebook.guid).all()
             
             
         # note tags    

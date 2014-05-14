@@ -307,8 +307,6 @@ class SyncThread(QtCore.QThread):
         self.app.log("Local account updates count:  %s" % self.sync_state.update_count)
         self.app.log("Remote account updates count: %s" % self.sync_state.srv_update_count)        
 
-        # try:
-            
         # Need a sync or update?            
         if need_to_update:
             self.remote_changes(

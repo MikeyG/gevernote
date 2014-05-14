@@ -222,20 +222,19 @@ class PullNotebook(BaseSync):
     #
     def _update_notebook(self, notebook_ttype):
         """Try to update notebook from ttype"""
-        
+       
+        print("NB query")        
         # is the notebook in the local database?
         # if NoResultFound then return and create new
         notebook = self.session.query(models.Notebook).filter(
             models.Notebook.guid == notebook_ttype.guid,
         ).one()
-        
+        print("NB query")        
         # if is in database then update it from the server
         if notebook.service_updated < notebook_ttype.serviceUpdated:
             notebook.from_api(notebook_ttype)
             
-        # done    
         return notebook
-
 
     # ************** Create Notebook **************
     #
@@ -250,10 +249,8 @@ class PullNotebook(BaseSync):
         # add/commit to local database
         self.session.add(notebook)
         self.session.commit()
-        
-        # done
-        return notebook
 
+        return notebook
 
     # ************** Remove Notebook **************
     #
@@ -270,7 +267,6 @@ class PullNotebook(BaseSync):
         self.session.query(models.Notebook).filter(
             q).delete(synchronize_session='fetch')
             
-   
    
    # !!!!!!!!!!!!  share notebooks ?????? 
             
