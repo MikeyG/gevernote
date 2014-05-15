@@ -85,7 +85,7 @@ def get_db_session(db_path=None):
     # Ex: engine = create_engine('sqlite:///:memory:', echo=True)
     # echo True - logging to python
     # uses mysql-python as the default DBAPI
-    engine = create_engine('sqlite:///%s' % db_path)
+    engine = create_engine('sqlite:///%s' % db_path, echo=True)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
