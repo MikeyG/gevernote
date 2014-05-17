@@ -11,9 +11,10 @@ requirements = [
     "pysqlite ",
     "regex",
     "sqlalchemy",
+    "PySide",
 ]
-if not 'TRAVIS_CI' in os.environ:
-    requirements.append('PySide')
+#if not 'TRAVIS_CI' in os.environ:
+#    requirements.append('PySide')
 
 
 setup(
