@@ -6,6 +6,7 @@ import urllib
 import urlparse
 import sys
 
+import oauth2 as oauth
 from evernote.api.client import EvernoteClient
 
 
