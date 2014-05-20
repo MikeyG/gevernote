@@ -6,6 +6,9 @@ import urllib
 import urlparse
 import sys
 
+from evernote.api.client import EvernoteClient
+
+
 FB_TOKEN_FILE = 'access_token.txt'
 
 class Browser(object):
