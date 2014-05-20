@@ -37,24 +37,24 @@ else:
     AppClass = QCoreApplication
 
 # Handle keyring for Lubuntu and LXDE
-class QSettingsKeyringAdpdater(object):
-    def __init__(self, settings):
-        self._settings = settings
+#class QSettingsKeyringAdpdater(object):
+#    def __init__(self, settings):
+#        self._settings = settings
 
-    def _prepare_name(self, app, name):
-        return '%s_%s' % (app, name)
-
-    def set_password(self, app, name, password):
-        self._settings.setValue(self._prepare_name(app, name), password)
-
-    def get_password(self, app, name):
-        self._settings.value(self._prepare_name(app, name))
+#    def _prepare_name(self, app, name):
+#        return '%s_%s' % (app, name)
+#
+#    def set_password(self, app, name, password):
+#        self._settings.setValue(self._prepare_name(app, name), password)
+#
+#    def get_password(self, app, name):
+#        self._settings.value(self._prepare_name(app, name))
 
 # get keyring - called from tools.py
-def get_keyring():
-    if os.environ.get('DESKTOP_SESSION', 'default') in ('Lubuntu', 'LXDE'):
-        # keyring fails on initialisation in lxde
-        return QSettingsKeyringAdpdater(AppClass.instance().settings)
-    else:
-        import keyring
-        return keyring
+#def get_keyring():
+#    if os.environ.get('DESKTOP_SESSION', 'default') in ('Lubuntu', 'LXDE'):
+#        # keyring fails on initialisation in lxde
+#        return QSettingsKeyringAdpdater(AppClass.instance().settings)
+#    else:
+#        import keyring
+#        return keyring

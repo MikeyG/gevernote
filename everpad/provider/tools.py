@@ -8,7 +8,7 @@ from urlparse import urlparse
 from .models import Base
 #from ..const import HOST, DB_PATH
 from ..tools import get_proxy_config
-from ..specific import get_keyring
+#from ..specific import get_keyring
 import os
 
 from everpad.const import (
@@ -17,30 +17,39 @@ from everpad.const import (
 )
 from evernote.api.client import EvernoteClient
 
+# Pull in all the keyring calls
+from keyring import get_password, set_password, delete_password
+
 
 # change item to lower case
 # used local only
 def _nocase_lower(item):
     return unicode(item).lower()
 
+# **********************************************************
+#               Keyring calls
+#
 # access the system keyring service
-# get_keyring() - specific.py
 # ref: https://pypi.python.org/pypi/keyring
+
+# set_password() - specific.py
 # set_password(service, username, password)
 # Store the password in the keyring.
 # Used local and agent.py - _init_network
 def set_auth_token(token):
-    get_keyring().set_password('everpad', 'oauth_token', token)
+    set_password('everpad', 'oauth_token', token)
 
-# access the system keyring service
-# get_keyring() - specific.py
-# ref: https://pypi.python.org/pypi/keyring
 # get_keyring()
-# Return the currently-loaded keyring implementation.
+# Returns the password stored in the active keyring. 
+# If the password does not exist, it will return None.
 # Used local and agent.py - _init_network
 def get_auth_token():
-    return get_keyring().get_password('everpad', 'oauth_token')
+    return get_password('everpad', 'oauth_token')
 
+# delete_password( )
+# Remove token from key ring
+def delete_token(token):
+    delete_password('everpad', 'oauth_token', token)
     
 """
 This is the start of my next change.  I want to move the entire oauth to
@@ -85,43 +94,10 @@ def get_db_session(db_path=None):
     # Ex: engine = create_engine('sqlite:///:memory:', echo=True)
     # echo True - logging to python
     # uses mysql-python as the default DBAPI
-    engine = create_engine('sqlite:///%s' % db_path, echo=True)
+    engine = create_engine('sqlite:///%s' % db_path, echo=False)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
     conn = session.connection()
     conn.connection.create_function('lower', 1, _nocase_lower)
     return session
-
-
-# MKG: Fixed to work with the v2.5 API  041314
-#def get_user_store(auth_token=None):
-    
-    # Get token if don't have it already
-#    if not auth_token:
-#        auth_token = get_auth_token()
-        
-#    user_store_uri = "https://" + HOST + "/edam/user"
-#    http_proxy=get_proxy_config(urlparse(user_store_uri).scheme)
-
-#    user_store_http_client = THttpClient.THttpClient(user_store_uri,None,None,http_proxy,None)
-#    user_store_protocol = TBinaryProtocol.TBinaryProtocol(user_store_http_client)
-
-#    return UserStore.Client(user_store_protocol)
-
-
-# MKG: Fixed to work with the v2.5 API  041314
-#def get_note_store(auth_token=None):
-    
-    # Get token if don't have it already
-#    if not auth_token:
-#        auth_token = get_auth_token()
-    
-#    user_store = get_user_store(auth_token)
-#    note_store_url = user_store.getNoteStoreUrl(auth_token)
-#    http_proxy=get_proxy_config(urlparse(note_store_url).scheme)
-
-#    note_store_http_client = THttpClient.THttpClient(note_store_url,None,None,http_proxy,None)
-#    note_store_protocol = TBinaryProtocol.TBinaryProtocol(note_store_http_client)
-
-#    return NoteStore.Client(note_store_protocol)

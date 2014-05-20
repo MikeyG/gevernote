@@ -1,8 +1,9 @@
 from everpad.provider.service import ProviderService
 from everpad.provider.sync.agent import SyncThread
-from everpad.provider.tools import set_auth_token, get_auth_token, auth_geverpad_token, get_db_session
+from everpad.provider.tools import set_auth_token, get_auth_token, get_db_session
 from everpad.specific import AppClass
 from everpad.tools import print_version
+#import everpad.provider.tools
 import everpad.provider.models
 
 from PySide.QtCore import Slot, QSettings
@@ -62,7 +63,7 @@ class ProviderApp(AppClass):
         self.sync_thread.data_changed.connect(
             Slot()(self.service.data_changed),
         )
-
+        
         # Start Sync Thread if provider is authenticated
         if get_auth_token():
             print("Auth token")
@@ -70,11 +71,11 @@ class ProviderApp(AppClass):
         else:
             print("No auth token")
 
-            # ************************************************************
-            #    Authentication and Termination Signals Setup
-            # ************************************************************
+        # ************************************************************
+        #    Authentication and Termination Signals Setup
+        # ************************************************************
 
-            # provider_authenticate @Slot
+        # provider_authenticate @Slot
         self.service.qobject.authenticate_signal.connect(
             self.provider_authenticate,
         )
