@@ -32,7 +32,10 @@ class Browser(object):
         # Creates the GTK+ app
         # http://www.pygtk.org/pygtk2reference/class-gtkwindow.html
         # gtk.Window - a top-level window that holds one child widget.
-        self.window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+        self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+        self.window.set_title("Evernote Authorize")
+        self.window.set_default_size(800,600)
+        
         self.scrolled_window = Gtk.ScrolledWindow()
         
         # Creates a WebKit view
@@ -44,7 +47,7 @@ class Browser(object):
         self.window.connect('destroy', self._destroy_event_cb) # Close window
         self.web_view.connect('load-committed', self._load_committed_cb) # Load page
         # change size !!!!!!!
-        self.window.set_default_size(1024, 800)
+        #self.window.set_default_size(1024, 800)
 
         # Loads the Evernote OAuth page
         self.web_view.load_uri(url)
