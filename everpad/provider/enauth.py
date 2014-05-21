@@ -23,8 +23,9 @@ class Browser(object):
     def __init__(self, url):
         """ 
             Constructor. Creates the GTK+ app and adds the WebKit widget
+            
+            @param url 
         """
-        self.debug = False
         self.close_window = True
         self.url = url
         self.oauth_verifier = ''
