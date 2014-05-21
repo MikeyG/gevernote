@@ -1,52 +1,53 @@
-#!/usr/bin/env python
-import pygtk
-import gtk
-import webkit
+#!/usr/bin/python
+from gi.repository import Gtk
+from gi.repository import WebKit
+
 import urllib
 import urlparse
 import sys
 
 import oauth2 as oauth
 from evernote.api.client import EvernoteClient
+from keyring import set_password
 
+CONSUMER_KEY = 'nvbn-1422'
+CONSUMER_SECRET = 'c17c0979d0054310'
 
-FB_TOKEN_FILE = 'access_token.txt'
 
 class Browser(object):
     """ Creates a web browser using GTK+ and WebKit to authorize a
-        desktop application in Facebook. It uses OAuth 2.0.
-        Requires the Facebook's Application ID. The token is then
-        saved to FB_TOKEN_FILE.
+        desktop application in Evernote. It uses OAuth 2.0.
+        Requires the evernote.api.client to be installed. 
     """
 
-    def __init__(self, app_key, scope='offline_access', token_file=FB_TOKEN_FILE):
-        """ Constructor. Creates the GTK+ app and adds the WebKit widget
-            @param app_key Application key ID (Public).
-
-            @param scope A string list of permissions to ask for. More at
-            http://developers.facebook.com/docs/reference/api/permissions/
+    def __init__(self, url):
+        """ 
+            Constructor. Creates the GTK+ app and adds the WebKit widget
         """
         self.debug = False
         self.close_window = True
-        self.token_file = token_file
-        self.token = ''
-        self.token_expire = ''
-        self.scope = scope
+        self.url = url
+        self.oauth_verifier = ''
+        
         # Creates the GTK+ app
-        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        self.scrolled_window = gtk.ScrolledWindow()
+        # http://www.pygtk.org/pygtk2reference/class-gtkwindow.html
+        # gtk.Window - a top-level window that holds one child widget.
+        self.window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+        self.scrolled_window = Gtk.ScrolledWindow()
+        
         # Creates a WebKit view
-        self.web_view = webkit.WebView()
+        self.web_view = WebKit.WebView()
         self.scrolled_window.add(self.web_view)
         self.window.add(self.scrolled_window)
+
         # Connects events
         self.window.connect('destroy', self._destroy_event_cb) # Close window
         self.web_view.connect('load-committed', self._load_committed_cb) # Load page
+        # change size !!!!!!!
         self.window.set_default_size(1024, 800)
-        # Loads the Facebook OAuth page
-        self.web_view.load_uri(
-            'https://www.facebook.com/dialog/oauth?client_id=%s&redirect_uri=%s&response_type=token&scope=%s' % (urllib.quote(app_key), urllib.quote('https://www.facebook.com/connect/login_success.html'), urllib.quote(self.scope))
-            )
+
+        # Loads the Evernote OAuth page
+        self.web_view.load_uri(url)
 
     def _load_committed_cb(self, web_view, frame):
         """ Callback. The page is about to be loaded. This event is captured
@@ -54,48 +55,70 @@ class Browser(object):
             access token.
 
             @param web_view A reference to the current WebKitWebView.
-
             @param frame A reference to the main WebKitWebFrame.
         """
         # Gets the current URL to check whether is the one of the redirection
-        uri = frame.get_uri()
-        parse = urlparse.urlparse(uri)
-        if (hasattr(parse, 'netloc') and hasattr(parse, 'path') and
-            hasattr(parse, 'fragment') and parse.netloc == 'www.facebook.com' and
-            parse.path == '/connect/login_success.html' and parse.fragment):
-            # Get token from URL
-            params = urlparse.parse_qs(parse.fragment)
-            self.token = params['access_token'][0]
-            self.token_expire = params['expires_in'][0] # Should be equal to 0, don't expire
-            # Save token to file
-            token_file = open(self.token_file, 'w')
-            token_file.write(self.token)
-            token_file.close()
-            if self.debug:
-                sys.stderr.write("Authentication done. Access token available at %s\n" % (self.token_file))
-            gtk.main_quit() # Finish
-            if self.close_window:
-                try:
-                    self.window.destroy()
-                except RuntimeError:
-                    pass
-                
-            
+        uri = frame.get_uri()        
+        self.oauth_verifier = uri 
+
+        # Finish        
+        Gtk.main_quit()  
+
+        if self.close_window:
+            try:
+                self.window.destroy()
+            except RuntimeError:
+                pass
 
     def _destroy_event_cb(self, widget):
         """ Callback for close window. Closes the application. """
-        return gtk.main_quit()
+        return Gtk.main_quit()
 
     def authorize(self):
         """ Runs the app. """
+ 
+        # display the window
         self.window.show_all()
-        gtk.main()
+
+        # start the GTK+ processing loop which we quit 
+        # when the window is closed
+        Gtk.main()
 
 if (__name__ == '__main__'):
-    # Creates the browser
-    browser = Browser(app_key='XXXXXXXXXXX', scope='offline_access,read_stream', token_file=FB_TOKEN_FILE)
+    
+    client = EvernoteClient(
+        consumer_key=CONSUMER_KEY,
+        consumer_secret =CONSUMER_SECRET,
+        sandbox=False
+    )
+
+    request_token = client.get_request_token("http://everpad/")
+    url = client.get_authorize_url(request_token)
+
+    if request_token['oauth_callback_confirmed']:
+        # Creates the browser
+        browser = Browser(url)
+    else:
+        # need app error checking/message here        
+        print("bad callback")
+
     # Launch browser window
     browser.authorize()
-    # Token available?
-    print "Token: %s" % (browser.token)
+
+    return_token = dict(urlparse.parse_qsl(browser.oauth_verifier))
+
+#    returned_token = self.client.get_access_token(
+#        request_token['oauth_token'],
+#        request_token['oauth_token_secret'],
+#        browser.oauth_verifier
+#    )
+
     
+    # Token available?
+    print "Token: %s" % return_token
+ 
+
+    # set_password('everpad', 'oauth_token', returned_token)
+
+    
+
