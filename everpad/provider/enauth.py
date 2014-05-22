@@ -51,7 +51,7 @@ class Browser(object):
         #self.window.set_default_size(1024, 800)
 
         # Loads the Evernote OAuth page
-        self.web_view.load_uri(url)
+        self.web_view.load_uri(urllib.quote(url))
 
     def _load_committed_cb(self, web_view, frame):
         """ Callback. The page is about to be loaded. This event is captured
