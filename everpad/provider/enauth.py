@@ -1,4 +1,6 @@
 #!/usr/bin/python
+import gi
+
 from gi.repository import Gtk
 from gi.repository import WebKit
 
