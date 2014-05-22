@@ -91,7 +91,7 @@ class Browser(object):
         # when the window is closed
         Gtk.main()
         
-def authorize_app:
+def authorize_app(self):
     
     client = EvernoteClient(
         consumer_key=CONSUMER_KEY,
