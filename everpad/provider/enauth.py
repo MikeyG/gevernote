@@ -10,7 +10,8 @@ import sys
 
 import oauth2 as oauth
 from evernote.api.client import EvernoteClient
-from keyring import set_password
+from keyring import get_password, set_password, delete_password
+
 
 CONSUMER_KEY = 'nvbn-1422'
 CONSUMER_SECRET = 'c17c0979d0054310'
@@ -89,8 +90,8 @@ class Browser(object):
         # start the GTK+ processing loop which we quit 
         # when the window is closed
         Gtk.main()
-
-if (__name__ == '__main__'):
+        
+def authorize_app:
     
     client = EvernoteClient(
         consumer_key=CONSUMER_KEY,
@@ -126,5 +127,8 @@ if (__name__ == '__main__'):
 
     # set_password('everpad', 'oauth_token', returned_token)
 
+if (__name__ == '__main__'):
+    authorize_app( )
+    
     
 
