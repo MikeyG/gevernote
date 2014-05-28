@@ -1,6 +1,6 @@
 from everpad.provider.service import ProviderService
 from everpad.provider.sync.agent import SyncThread
-from everpad.provider.tools import set_auth_token, get_auth_token, get_db_session
+from everpad.provider.tools import get_db_session
 from everpad.specific import AppClass
 from everpad.tools import print_version
 #import everpad.provider.tools
@@ -130,7 +130,7 @@ class ProviderApp(AppClass):
     def provider_authenticate(self):
         # auth_geverpad_token everpad/provider/tools.py 
         # oauth_result =
-        auth_geverpad_token()
+        get_auth_token( )
 
     # get_auth_token --- see tools.py
 
@@ -149,7 +149,7 @@ class ProviderApp(AppClass):
         self.sync_thread.update_count = 0
 
         # get_db_sesson everpad/provider/tools.py
-        set_auth_token('')
+        delete_auth_token( )
         session = get_db_session()
 
         session.query(everpad.provider.models.Note).delete(
