@@ -5,6 +5,7 @@ from everpad.specific import AppClass
 from everpad.tools import print_version
 #import everpad.provider.tools
 import everpad.provider.models
+import everpad.provider.enauth
 
 from PySide.QtCore import Slot, QSettings
 
@@ -65,7 +66,7 @@ class ProviderApp(AppClass):
         )
         
         # Start Sync Thread if provider is authenticated
-        if get_auth_token():
+        if get_auth_token( ):
             print("Auth token")
             self.sync_thread.start()
         else:
