@@ -1,134 +1,149 @@
 #!/usr/bin/python
-import gi
-
 from gi.repository import Gtk
 from gi.repository import WebKit
-
-import urllib
-import urlparse
-import sys
-
-import oauth2 as oauth
+import urlparse  
 from evernote.api.client import EvernoteClient
-from keyring import get_password, set_password, delete_password
+from keyring import get_password,set_password,delete_password
 
-
+# using everpad constants for test
 CONSUMER_KEY = 'nvbn-1422'
 CONSUMER_SECRET = 'c17c0979d0054310'
+SANDBOX_ENABLE = False
 
 
-class Browser(object):
-    """ Creates a web browser using GTK+ and WebKit to authorize a
-        desktop application in Evernote. It uses OAuth 2.0.
-        Requires the evernote.api.client to be installed. 
-    """
-
-    def __init__(self, url):
-        """ 
-            Constructor. Creates the GTK+ app and adds the WebKit widget
-            
-            @param url 
-        """
-        self.close_window = True
-        self.url = url
-        self.oauth_verifier = ''
+class AuthWindow(Gtk.Window):
+    def __init__(self, url_callback):
+        super(AuthWindow, self).__init__()
         
-        # Creates the GTK+ app
-        # http://www.pygtk.org/pygtk2reference/class-gtkwindow.html
-        # gtk.Window - a top-level window that holds one child widget.
-        self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-        self.window.set_title("Evernote Authorize")
-        self.window.set_default_size(800,600)
+        self.url_callback = url_callback
+        self.oauth_verifier = 'None'
         
-        self.scrolled_window = Gtk.ScrolledWindow()
-        
-        # Creates a WebKit view
+        # Creates the GTK+ app and a WebKit view
         self.web_view = WebKit.WebView()
+        self.scrolled_window = Gtk.ScrolledWindow()
         self.scrolled_window.add(self.web_view)
-        self.window.add(self.scrolled_window)
+        self.add(self.scrolled_window)
+        self.set_size_request(800, 600)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_title("Authorize")
+        self.set_skip_taskbar_hint(True)
+        self.set_resizable(False)
 
-        # Connects events
-        self.window.connect('destroy', self._destroy_event_cb) # Close window
-        self.web_view.connect('load-committed', self._load_committed_cb) # Load page
-        # change size !!!!!!!
-        #self.window.set_default_size(1024, 800)
-
-        # Loads the Evernote OAuth page
-        self.web_view.load_uri(urllib.quote(url))
-
-    def _load_committed_cb(self, web_view, frame):
-        """ Callback. The page is about to be loaded. This event is captured
-            to intercept the OAuth 2.0 redirection, which includes the
-            access token.
-
-            @param web_view A reference to the current WebKitWebView.
-            @param frame A reference to the main WebKitWebFrame.
-        """
-        # Gets the current URL to check whether is the one of the redirection
-        uri = frame.get_uri()        
-        self.oauth_verifier = uri 
-
-        # Finish        
-        Gtk.main_quit()  
-
-        if self.close_window:
-            try:
-                self.window.destroy()
-            except RuntimeError:
-                pass
-
-    def _destroy_event_cb(self, widget):
-        """ Callback for close window. Closes the application. """
-        return Gtk.main_quit()
-
-    def authorize(self):
-        """ Runs the app. """
- 
-        # display the window
-        self.window.show_all()
-
-        # start the GTK+ processing loop which we quit 
-        # when the window is closed
-        Gtk.main()
+        # http://midori-browser.org/docs/api/vala/midori/WebKit.WebView.html        
+        self.web_view.connect('navigation-policy-decision-requested', self.webkit_navigation_callback)
+        #self.web_view.connect("destroy", Gtk.main_quit)
+        self.connect("delete-event", Gtk.main_quit)
         
-def authorize_app(self):
+        self.web_view.load_uri(url_callback)
+
+    def webkit_navigation_callback(self, 
+       web_view, frame, request,
+       navigation_action, policy_decision, *args
+    ):
+        
+        cb_uri = request.get_uri( ) 
+        
+        # check if this is the verifier        
+        if "everpad" and "oauth_verifier" in cb_uri:
+            if self.oauth_verifier == "None":
+                parsed_uri = dict(urlparse.parse_qsl(cb_uri))
+                self.oauth_verifier = parsed_uri['oauth_verifier']
+                self.close( )
+        # easy way to handle a cancel button on auth page        
+        elif not cb_uri.startswith('https://www.evernote.com/'):
+            self.close( )
+        # just do nothing this time        
+        else:
+            pass
+
+        return False
+
+# Uses Evernote client to get oauth token
+def _get_evernote_token(app_debug):
     
     client = EvernoteClient(
         consumer_key=CONSUMER_KEY,
         consumer_secret =CONSUMER_SECRET,
-        sandbox=False
-    )
+        sandbox=SANDBOX_ENABLE
+    )    
 
-    request_token = client.get_request_token("http://everpad/")
-    url = client.get_authorize_url(request_token)
+    request_token = client.get_request_token("http://everpad/")    
 
     if request_token['oauth_callback_confirmed']:
-        # Creates the browser
-        browser = Browser(url)
-    else:
+        url_callback = client.get_authorize_url(request_token)
+        
+        if app_debug:
+            print ("URL:                 %s" % url_callback)
+            print ("oauth_token:         %s" % request_token['oauth_token'])
+            print ("oauth_token_secret:  %s" % request_token['oauth_token_secret'])
+            
+        window = AuthWindow(url_callback)
+        window.show_all()
+        Gtk.main()
+
+        if app_debug:
+            print ("oauth_verifier:      %s" % window.oauth_verifier)
+                                
+        if not (window.oauth_verifier == "None"):
+        	   # get the token for authorization     
+            user_token = client.get_access_token(
+                request_token['oauth_token'],
+                request_token['oauth_token_secret'],
+                window.oauth_verifier
+            )
+        else:
+            # handle window closed by cancel and no token            
+            user_token = window.oauth_verifier	
+        	        
+        Gtk.main_quit
+        
+        if app_debug:
+            print ("user_token:          %s" % user_token)
+    
+    elif app_debug:
         # need app error checking/message here        
-        print("bad callback")
-
-    # Launch browser window
-    browser.authorize()
-
-    return_token = dict(urlparse.parse_qsl(browser.oauth_verifier))
-
-#    returned_token = self.client.get_access_token(
-#        request_token['oauth_token'],
-#        request_token['oauth_token_secret'],
-#        browser.oauth_verifier
-#    )
-
+        print("bad callback")    
     
     # Token available?
-    print "Token: %s" % return_token
- 
+    return user_token
 
-    # set_password('everpad', 'oauth_token', returned_token)
+###############################################################
+#
+#            External Authorization Routines
+#
+###############################################################
 
+#####
+#  get_auth( )
+#
+# Return true if token exists
+def get_auth_token( ):
+    return get_password('geverpad', 'oauth_token')
+    
+#####
+#  delete_auth_token( )
+#
+# Delete token from keyring
+def delete_auth_token( ):
+    delete_password('geverpad', 'oauth_token')
+
+#####
+#  change_auth( )
+#
+# Like original Everpad, authorize toggles token, if authorized then
+# delete token, if not authorized then get token
+def change_auth_token( ):
+    if get_password('geverpad', 'oauth_token'):
+        delete_password('geverpad', 'oauth_token')
+        print "Found and deleted"
+    else:
+        oauth_token = _get_evernote_token(True)
+        if oauth_token != "None":
+            set_password('geverpad', 'oauth_token', oauth_token)
+
+
+# For testing standalone
 if (__name__ == '__main__'):
-    authorize_app( )
-    
-    
 
+    change_auth_token( ) 
+    
