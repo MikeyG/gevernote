@@ -49,7 +49,7 @@ def get_auth_token():
 # delete_password( )
 # Remove token from key ring
 def delete_token(token):
-    delete_password('everpad', 'oauth_token', token)
+    delete_password('everpad', 'oauth_token')
     
 """
 This is the start of my next change.  I want to move the entire oauth to
