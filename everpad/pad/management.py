@@ -43,6 +43,7 @@ def get_oauth_proxy(scheme):
 #        Oauth web interface to get user name and password
 #
 # **********************************************************************
+"""
 class AuthPage(QWebPage):
     def __init__(self, token, secret, client, parent, *args, **kwargs):
         QWebPage.__init__(self, *args, **kwargs)
@@ -73,7 +74,7 @@ class TLSNetworkAccessManager(QNetworkAccessManager):
         conf.setProtocol(QSsl.TlsV1)
         request.setSslConfiguration(conf)
         return QNetworkAccessManager.createRequest(self, op, request, outgoingData)
-
+"""
 
 
 
@@ -270,7 +271,7 @@ class Management(QDialog):
             # 
             if ret == QMessageBox.Yes:
                 # daemon.py
-                self.app.provider.remove_authentication()
+                self.app.provider.remove_authentication( )
                 self.update_tabs()
         
         # If not athenticated then authenticate --- 

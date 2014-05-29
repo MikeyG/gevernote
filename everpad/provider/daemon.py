@@ -128,16 +128,14 @@ class ProviderApp(AppClass):
     # add auth MKG
     @Slot(str)
     def provider_authenticate(self):
-        # auth_geverpad_token everpad/provider/tools.py 
-        # oauth_result =
-        get_auth_token( )
-
-    # get_auth_token --- see tools.py
+        # auth_geverpad_token enauth.py 
+        if get_auth_token( ) != "None"
+            self.sync_thread.start( )
 
     @Slot(str)
     def on_authenticated(self, token):
         # set_auth_token everpad/provider/tools.py 
-        set_auth_token(token)
+        #set_auth_token(token)
         self.sync_thread.start()
 
     @Slot()
@@ -148,8 +146,10 @@ class ProviderApp(AppClass):
         self.sync_thread.quit()
         self.sync_thread.update_count = 0
 
-        # get_db_sesson everpad/provider/tools.py
+        # delete_auth_token - enauth.py        
         delete_auth_token( )
+        
+        # get_db_sesson everpad/provider/tools.py        
         session = get_db_session()
 
         session.query(everpad.provider.models.Note).delete(

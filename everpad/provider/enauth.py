@@ -1,14 +1,11 @@
-#!/usr/bin/python
 from gi.repository import Gtk
 from gi.repository import WebKit
 import urlparse  
 from evernote.api.client import EvernoteClient
 from keyring import get_password,set_password,delete_password
-
-# using everpad constants for test
-CONSUMER_KEY = 'nvbn-1422'
-CONSUMER_SECRET = 'c17c0979d0054310'
-SANDBOX_ENABLE = False
+from everpad.const import (
+    CONSUMER_KEY, CONSUMER_SECRET,
+)
 
 
 class AuthWindow(Gtk.Window):
@@ -31,7 +28,6 @@ class AuthWindow(Gtk.Window):
 
         # http://midori-browser.org/docs/api/vala/midori/WebKit.WebView.html        
         self.web_view.connect('navigation-policy-decision-requested', self.webkit_navigation_callback)
-        #self.web_view.connect("destroy", Gtk.main_quit)
         self.connect("delete-event", Gtk.main_quit)
         
         self.web_view.load_uri(url_callback)
@@ -64,7 +60,7 @@ def _get_evernote_token(app_debug):
     client = EvernoteClient(
         consumer_key=CONSUMER_KEY,
         consumer_secret =CONSUMER_SECRET,
-        sandbox=SANDBOX_ENABLE
+        FALSE
     )    
 
     request_token = client.get_request_token("http://everpad/")    
@@ -72,20 +68,18 @@ def _get_evernote_token(app_debug):
     if request_token['oauth_callback_confirmed']:
         url_callback = client.get_authorize_url(request_token)
         
-        if app_debug:
-            print ("URL:                 %s" % url_callback)
-            print ("oauth_token:         %s" % request_token['oauth_token'])
-            print ("oauth_token_secret:  %s" % request_token['oauth_token_secret'])
+        self.app.log("URL:                 %s" % url_callback)
+        self.app.log("oauth_token:         %s" % request_token['oauth_token'])
+        self.app.log("oauth_token_secret:  %s" % request_token['oauth_token_secret'])
             
         window = AuthWindow(url_callback)
         window.show_all()
         Gtk.main()
 
-        if app_debug:
-            print ("oauth_verifier:      %s" % window.oauth_verifier)
+        self.app.log("oauth_verifier:      %s" % window.oauth_verifier)
                                 
         if not (window.oauth_verifier == "None"):
-        	   # get the token for authorization     
+            # get the token for authorization     
             user_token = client.get_access_token(
                 request_token['oauth_token'],
                 request_token['oauth_token_secret'],
@@ -97,12 +91,11 @@ def _get_evernote_token(app_debug):
         	        
         Gtk.main_quit
         
-        if app_debug:
-            print ("user_token:          %s" % user_token)
+        self.app.log("user_token:          %s" % user_token)
     
     elif app_debug:
         # need app error checking/message here        
-        print("bad callback")    
+        self.app.log("bad callback")    
     
     # Token available?
     return user_token
@@ -142,8 +135,4 @@ def change_auth_token( ):
             set_password('geverpad', 'oauth_token', oauth_token)
 
 
-# For testing standalone
-if (__name__ == '__main__'):
-
-    change_auth_token( ) 
     

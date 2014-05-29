@@ -5,7 +5,8 @@ from dbus.exceptions import DBusException
 from .. import const, basetypes as btype
 from ..specific import AppClass
 from . import models
-from .tools import get_db_session, get_auth_token
+from .tools import get_db_session
+from everpad.provider.enauth get_auth_token
 import dbus
 import dbus.service
 import time
