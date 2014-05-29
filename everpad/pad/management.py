@@ -285,7 +285,7 @@ class Management(QDialog):
 # •Security: HTTPS for all requests
 # •Supported signature methods: PLAINTEXT & HMAC-SHA1
 # •Supported OAuth parameter locations: HTTP Authorization header & request URI query parameters
-
+"""
             client = EvernoteClient(
                 consumer_key=CONSUMER_KEY,
                 consumer_secret =CONSUMER_SECRET,
@@ -306,17 +306,22 @@ class Management(QDialog):
                 page.mainFrame().load(url)
             else:
                 print("Bad callback")
-
-    @Slot()
-    def close_clicked(self):
-        self.close()
-
-    def auth_finished(self, token):
+"""
         self.app.provider.authenticate(token)
         self.ui.webView.hide()
         self.ui.tabWidget.show()
         self.update_tabs()
 
+    @Slot()
+    def close_clicked(self):
+        self.close()
+"""
+    def auth_finished(self, token):
+        self.app.provider.authenticate(token)
+        self.ui.webView.hide()
+        self.ui.tabWidget.show()
+        self.update_tabs()
+"""
     def closeEvent(self, event):
         event.ignore()
         self.closed = True

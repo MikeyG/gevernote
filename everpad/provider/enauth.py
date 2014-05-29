@@ -4,7 +4,7 @@ import urlparse
 from evernote.api.client import EvernoteClient
 from keyring import get_password,set_password,delete_password
 from everpad.const import (
-    CONSUMER_KEY, CONSUMER_SECRET,
+    CONSUMER_KEY, CONSUMER_SECRET, HOST,
 )
 
 
@@ -46,7 +46,7 @@ class AuthWindow(Gtk.Window):
                 self.oauth_verifier = parsed_uri['oauth_verifier']
                 self.close( )
         # easy way to handle a cancel button on auth page        
-        elif not cb_uri.startswith('https://www.evernote.com/'):
+        elif not cb_uri.startswith(HOST):
             self.close( )
         # just do nothing this time        
         else:
