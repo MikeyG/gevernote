@@ -98,31 +98,34 @@ class ProviderApp(AppClass):
         # https://docs.python.org/2/library/logging.html
         # good ref: 
         # http://victorlin.me/posts/2012/08/26/good-logging-practice-in-python
-
+        # Yes, quite drawn out with all my if verbose, but readable for me when 
+        # I come back to this in a couple weeks or more
         logging.basicConfig(level=logging.INFO)
         
         # create logger and set to debug
         self.logger = logging.getLogger('gevernote-provider')
         logger.setLevel(logging.DEBUG)
         
-
-        # self.logger.setLevel(logging.DEBUG)
-        print("pre logging.getLogger1")
         fh = logging.FileHandler(
-            os.path.expanduser('~/.everpad/logs/everpad-provider.log'))
+            os.path.expanduser('~/.everpad/logs/gevernote-provider.log'))
         fh.setLevel(logging.DEBUG)
-        print("pre logging.getLogger2")
+        if verbose:
+            ch = logging.StreamHandler( )
+            ch = setLevel(logging.DEBUG)
 
-        formatter = logging.Formatter(
+        fhformatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        fh.setFormatter(formatter)
+        fh.setFormatter(fhformatter)
+        if verbose:
+            chformatter('%(asctime)s - %(message)s')
+            ch.setFormatter(chformatter)
 
         self.logger.addHandler(fh)
+        if verbose:
+            self.logger.addHandler(ch)
 
         # self.logger.info('Provider started.')
-
         #log('Provider started.')
-
         #log("sqlalchemy %s" % sqlalchemy.__version__)
 
     # ************************************************************
@@ -175,8 +178,8 @@ class ProviderApp(AppClass):
     # in addition to file
     def log(self, data):
         self.logger.debug(data)
-        if self.verbose:
-            print data
+        #if self.verbose:
+        #    print data
 
     # stop SyncThread 
     @Slot()
