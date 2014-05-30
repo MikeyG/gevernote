@@ -223,7 +223,7 @@ def main():
 
     # lockfile using usr name getpass.getuser()
     # start main loop or error out
-    fp = open('/tmp/gverpad-provider-%s.lock' % getpass.getuser(), 'w')
+    fp = open('/tmp/gvernote-provider-%s.lock' % getpass.getuser(), 'w')
 
     try:
 
@@ -245,7 +245,7 @@ def main():
         app.exec_()
 
     except IOError:
-        print("geverpad-provider already running")
+        print("gevernote-provider already running")
     except Exception as e:
         print(e)
 
