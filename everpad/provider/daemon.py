@@ -5,7 +5,7 @@ from everpad.specific import AppClass
 from everpad.tools import print_version
 #import everpad.provider.tools
 import everpad.provider.models
-import everpad.provider.enauth
+from everpad.provider.enauth import get_auth_token,change_auth_token,delete_auth_token 
 
 from PySide.QtCore import Slot, QSettings
 
@@ -130,8 +130,9 @@ class ProviderApp(AppClass):
     # add auth MKG
     @Slot(str)
     def provider_authenticate(self):
-        # auth_geverpad_token enauth.py 
-        if get_auth_token( ) != "None"
+        # auth_geverpad_token enauth.py
+        change_auth_token( ) 
+        if get_auth_token( ) != "None":
             self.sync_thread.start( )
 
     @Slot(str)

@@ -12,7 +12,7 @@ import socket
 
 # Keep track of various sync errors, etc.
 from .base import SyncStatus
-
+from everpad.provider.enauth import get_auth_token
 from evernote.api.client import EvernoteClient
 
 
@@ -192,7 +192,7 @@ class SyncThread(QtCore.QThread):
         while True:
             try:
             	 # pull token from keyring
-                self.auth_token = tools.get_auth_token()
+                self.auth_token = get_auth_token()
                 
                 # use EvernoteClient() to get userstore and notestore
                 client = EvernoteClient(token=self.auth_token, sandbox=False)

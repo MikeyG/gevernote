@@ -59,8 +59,8 @@ def _get_evernote_token(app_debug):
     
     client = EvernoteClient(
         consumer_key=CONSUMER_KEY,
-        consumer_secret =CONSUMER_SECRET,
-        FALSE
+        consumer_secret=CONSUMER_SECRET,
+        sandbox=False
     )    
 
     request_token = client.get_request_token("http://everpad/")    

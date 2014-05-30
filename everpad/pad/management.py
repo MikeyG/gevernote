@@ -43,42 +43,6 @@ def get_oauth_proxy(scheme):
 #        Oauth web interface to get user name and password
 #
 # **********************************************************************
-"""
-class AuthPage(QWebPage):
-    def __init__(self, token, secret, client, parent, *args, **kwargs):
-        QWebPage.__init__(self, *args, **kwargs)
-        self.token = token
-        self.secret = secret
-        self.client = client
-        self.parent = parent
-        manager = TLSNetworkAccessManager(self)
-        manager.sslErrors.connect(self.ssl)
-        self.setNetworkAccessManager(manager)
-
-    def acceptNavigationRequest(self, frame, request, type):
-        url = request.url()
-        if 'everpad' in url.host():
-            oauth_verifier = url.queryItemValue('oauth_verifier')
-            returned_token = self.client.get_access_token(
-                self.token, self.secret, oauth_verifier
-            )
-            self.parent.auth_finished(returned_token)
-        return True
-
-    def ssl(self, reply, errors):
-        reply.ignoreSslErrors()
-
-class TLSNetworkAccessManager(QNetworkAccessManager):
-    def createRequest(self, op, request, outgoingData=None):
-        conf = QSslConfiguration()
-        conf.setProtocol(QSsl.TlsV1)
-        request.setSslConfiguration(conf)
-        return QNetworkAccessManager.createRequest(self, op, request, outgoingData)
-"""
-
-
-
-
 
 class Management(QDialog):
     """Management dialog"""
@@ -278,51 +242,23 @@ class Management(QDialog):
         else:
             self.ui.tabWidget.hide()
             self.ui.webView.show()
-            
-# •Temporary credential request URI: https://evernoteHost/oauth
-# •Resource owner authorization URI: https://evernoteHost/OAuth.action
-# •Token request URI: https://evernoteHost/oauth
-# •Security: HTTPS for all requests
-# •Supported signature methods: PLAINTEXT & HMAC-SHA1
-# •Supported OAuth parameter locations: HTTP Authorization header & request URI query parameters
-"""
-            client = EvernoteClient(
-                consumer_key=CONSUMER_KEY,
-                consumer_secret =CONSUMER_SECRET,
-                sandbox=False
-            )
-            request_token = client.get_request_token("http://everpad/")
-            url = client.get_authorize_url(request_token)
-            
-            if request_token['oauth_callback_confirmed']:
-                page = AuthPage(
-                    request_token['oauth_token'], 
-                    request_token['oauth_token_secret'],
-                    client,
-                    self,
-                )
-            
-                self.ui.webView.setPage(page)
-                page.mainFrame().load(url)
-            else:
-                print("Bad callback")
-"""
-        self.app.provider.authenticate(token)
+            self.app.provider.provider_authenticate( )
+
         self.ui.webView.hide()
         self.ui.tabWidget.show()
         self.update_tabs()
-
+ 
     @Slot()
     def close_clicked(self):
         self.close()
-"""
+
     def auth_finished(self, token):
         self.app.provider.authenticate(token)
         self.ui.webView.hide()
         self.ui.tabWidget.show()
         self.update_tabs()
-"""
+
     def closeEvent(self, event):
         event.ignore()
         self.closed = True
-        self.hide()
+        self.hide() 
