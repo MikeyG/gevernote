@@ -100,9 +100,11 @@ class ProviderApp(AppClass):
         # http://victorlin.me/posts/2012/08/26/good-logging-practice-in-python
 
         logging.basicConfig(level=logging.INFO)
-        self.logger = logging.getLogger('everpad-provider')
-
-        print("pre logging.getLogger")
+        
+        # create logger and set to debug
+        self.logger = logging.getLogger('gevernote-provider')
+        logger.setLevel(logging.DEBUG)
+        
 
         # self.logger.setLevel(logging.DEBUG)
         print("pre logging.getLogger1")
