@@ -20,6 +20,8 @@ SOURCES = everpad/tools.py \
     everpad/pad/management.py \
     everpad/const.py \
     everpad/provider/tools.py \
+    everpad/provider/enauth.py \
+    everpad/provider/const.py \
     everpad/provider/daemon.py \
     everpad/provider/__init__.py \
     everpad/provider/models.py \
