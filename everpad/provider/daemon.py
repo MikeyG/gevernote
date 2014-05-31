@@ -63,7 +63,7 @@ class ProviderApp(AppClass):
             ch.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
             self.logger.addHandler(ch)
 
-        app.log('Provider started.')
+        self.logger.info('Logging started.')
         
         #log('Provider started.')
         #log("sqlalchemy %s" % sqlalchemy.__version__)
@@ -76,7 +76,8 @@ class ProviderApp(AppClass):
         #  Backwards?
         self.settings = QSettings('everpad', 'everpad-provider')
 
-
+        # going to do more here - gsettings        
+        self.logger.debug('Setting parsed.')
 
         # Ref: http://excid3.com/blog/an-actually-decent-python-dbus-tutorial/
         # SessionBus because service is a session level daemon
@@ -101,10 +102,10 @@ class ProviderApp(AppClass):
         
         # Start Sync Thread if provider is authenticated
         if get_auth_token( ):
-            print("Auth token")
+            self.logger.debug('Auth - Starting Sync Thread.')
             self.sync_thread.start()
         else:
-            print("No auth token")
+            self.logger.debug('No Auth - Sync Thread not started.')
 
         # ************************************************************
         #    Authentication and Termination Signals Setup
@@ -123,6 +124,8 @@ class ProviderApp(AppClass):
             self.on_remove_authenticated,
         )
         self.service.qobject.terminate.connect(self.terminate)
+        
+        self.logger.info('Provider started.')
 
     # ************************************************************
     #          Authentication and Termination 
