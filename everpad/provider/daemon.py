@@ -36,6 +36,38 @@ class ProviderApp(AppClass):
         # AppClass = QCoreApplication
         AppClass.__init__(self, *args, **kwargs)
 
+        # ************************************************************
+        #                   Configure logger
+        # ************************************************************
+        # https://docs.python.org/2/library/logging.html
+        # good ref: 
+        # http://victorlin.me/posts/2012/08/26/good-logging-practice-in-python
+        # Yes, quite drawn out with all my if verbose, but readable for me when 
+        # I come back to this in a couple weeks or more
+
+        logging.basicConfig(level=logging.INFO)
+        
+        # create logger and set to debug
+        self.logger = logging.getLogger('gevernote-provider')
+        self.logger.setLevel(logging.DEBUG)
+        
+        fh = logging.FileHandler(
+            os.path.expanduser('~/.everpad/logs/gevernote-provider.log'))
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(logging.Formatter( 
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+        self.logger.addHandler(fh)
+        if verbose:
+            ch = logging.StreamHandler( )
+            ch.setLevel(logging.DEBUG)
+            ch.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+            self.logger.addHandler(ch)
+
+        app.log('Provider started.')
+        
+        #log('Provider started.')
+        #log("sqlalchemy %s" % sqlalchemy.__version__)
+        
         # ref:  http://qt-project.org/doc/qt-4.8/qsettings.html
         #
         # For example, if your product is called Star Runner and your company 
@@ -44,8 +76,7 @@ class ProviderApp(AppClass):
         #  Backwards?
         self.settings = QSettings('everpad', 'everpad-provider')
 
-        # debug output - true if verbose passed
-        self.verbose = verbose
+
 
         # Ref: http://excid3.com/blog/an-actually-decent-python-dbus-tutorial/
         # SessionBus because service is a session level daemon
@@ -92,42 +123,6 @@ class ProviderApp(AppClass):
             self.on_remove_authenticated,
         )
         self.service.qobject.terminate.connect(self.terminate)
-
-        # ************************************************************
-        #                   Configure logger
-        # ************************************************************
-        # https://docs.python.org/2/library/logging.html
-        # good ref: 
-        # http://victorlin.me/posts/2012/08/26/good-logging-practice-in-python
-        # Yes, quite drawn out with all my if verbose, but readable for me when 
-        # I come back to this in a couple weeks or more
-        logging.basicConfig(level=logging.INFO)
-        
-        # create logger and set to debug
-        self.logger = logging.getLogger('gevernote-provider')
-        logger.setLevel(logging.DEBUG)
-        
-        fh = logging.FileHandler(
-            os.path.expanduser('~/.everpad/logs/gevernote-provider.log'))
-        fh.setLevel(logging.DEBUG)
-        if verbose:
-            ch = logging.StreamHandler( )
-            ch = setLevel(logging.DEBUG)
-
-        fhformatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        fh.setFormatter(fhformatter)
-        if verbose:
-            chformatter('%(asctime)s - %(message)s')
-            ch.setFormatter(chformatter)
-
-        self.logger.addHandler(fh)
-        if verbose:
-            self.logger.addHandler(ch)
-
-        # self.logger.info('Provider started.')
-        #log('Provider started.')
-        #log("sqlalchemy %s" % sqlalchemy.__version__)
 
     # ************************************************************
     #          Authentication and Termination 
