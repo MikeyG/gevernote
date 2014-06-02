@@ -1,4 +1,6 @@
+# dbus services
 from everpad.provider.service import ProviderService
+
 from everpad.provider.sync.agent import SyncThread
 from everpad.provider.tools import get_db_session
 from everpad.specific import AppClass
