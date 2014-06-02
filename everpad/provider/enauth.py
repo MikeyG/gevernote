@@ -40,7 +40,9 @@ class AuthWindow(Gtk.Window):
        navigation_action, policy_decision, *args
     ):
         
-        cb_uri = request.get_uri( ) 
+        cb_uri = request.get_uri( )
+        
+        logger.debug("nav_callback uri:  %s" % cb_uri)
         
         # check if this is the verifier        
         if "everpad" and "oauth_verifier" in cb_uri:
