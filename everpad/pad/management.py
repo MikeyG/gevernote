@@ -22,7 +22,7 @@ from httplib2 import ProxyInfo
 from httplib2.socks import PROXY_TYPE_HTTP
 
 # temp
-from evernote.api.client import EvernoteClient
+#from evernote.api.client import EvernoteClient
 
 
 def get_oauth_proxy(scheme):
@@ -168,7 +168,7 @@ class Management(QDialog):
         if self.app.provider.is_authenticated():
             self.ui.authBtn.setText(self.tr('Remove Authorisation'))
         else:
-            self.ui.authBtn.setText(self.tr('Authorise'))
+            self.ui.authBtn.setText(self.tr('Authorize'))
         self.ui.autoStart.setCheckState(Qt.Checked
             if os.path.isfile(self.startup_file)
         else Qt.Unchecked)
@@ -218,9 +218,12 @@ class Management(QDialog):
     def change_auth(self):
         # If we already are authenticated, this click sets up to
         # remove authentication ---
-        if self.app.provider.is_authenticated():
+        if self.app.provider.is_authenticated( ):
             print "everpad remove"
+            
+            
             # You really want to do this???? LOL
+            # MKG - want to move to provider
             msgBox = QMessageBox(
                 QMessageBox.Critical,
                 self.tr("You are trying to remove authorisation"),
@@ -245,7 +248,7 @@ class Management(QDialog):
             self.app.provider.authenticate( )
             
 
-        self.ui.webView.hide()
+        #self.ui.webView.hide()
         self.ui.tabWidget.show()
         self.update_tabs()
  
@@ -259,7 +262,7 @@ class Management(QDialog):
 #        self.ui.tabWidget.show()
 #        self.update_tabs()
 
-    def closeEvent(self, event):
-        event.ignore()
-        self.closed = True
-        self.hide() 
+#    def closeEvent(self, event):
+#        event.ignore()
+#        self.closed = True
+#        self.hide() 
