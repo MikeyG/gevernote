@@ -532,8 +532,8 @@ class ProviderService(dbus.service.Object):
         """Authenticate client with token"""
         # self.qobject.remove_authenticate_signal.emit()
         self.qobject.authenticate_signal.emit( )
-        if self.app.sync_thread.status != const.STATUS_SYNC:
-            self.app.sync_thread.force_sync()
+        #if self.app.sync_thread.status != const.STATUS_SYNC:
+        #    self.app.sync_thread.force_sync()
         self.data_changed()
 
     #************************************************
