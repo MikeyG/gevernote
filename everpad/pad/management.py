@@ -219,7 +219,7 @@ class Management(QDialog):
         # If we already are authenticated, this click sets up to
         # remove authentication ---
         if self.app.provider.is_authenticated():
-            
+            print "everpad remove"
             # You really want to do this???? LOL
             msgBox = QMessageBox(
                 QMessageBox.Critical,
@@ -240,9 +240,10 @@ class Management(QDialog):
         
         # If not athenticated then authenticate --- 
         else:
-            self.ui.tabWidget.hide()
-            self.ui.webView.show()
-            self.app.provider.provider_authenticate( )
+            #self.ui.tabWidget.hide()
+            #self.ui.webView.show()
+            self.app.provider.authenticate( )
+            
 
         self.ui.webView.hide()
         self.ui.tabWidget.show()
@@ -252,11 +253,11 @@ class Management(QDialog):
     def close_clicked(self):
         self.close()
 
-    def auth_finished(self, token):
-        self.app.provider.authenticate(token)
-        self.ui.webView.hide()
-        self.ui.tabWidget.show()
-        self.update_tabs()
+#    def auth_finished(self, token):
+#        self.app.provider.authenticate(token)
+#        self.ui.webView.hide()
+#        self.ui.tabWidget.show()
+#        self.update_tabs()
 
     def closeEvent(self, event):
         event.ignore()

@@ -15,6 +15,8 @@ from .base import SyncStatus
 from everpad.provider.enauth import get_auth_token
 from evernote.api.client import EvernoteClient
 
+# python built-in logging 
+import logging
 
 """
     Rate Limit handling:
@@ -42,6 +44,8 @@ class SyncThread(QtCore.QThread):
     force_sync_signal = QtCore.Signal()
     sync_state_changed = QtCore.Signal(int)
     data_changed = QtCore.Signal()
+    
+    logger = logging.getLogger('gevernote-provider')
     
     def __init__(self, *args, **kwargs):
         """Init default values"""
@@ -229,6 +233,8 @@ class SyncThread(QtCore.QThread):
     # This is the main loop of the thread
     def run(self):
         """Run thread"""
+        
+        #self.logger.debug('SyncThread starting.')        
         
         # Fixed an issue here.  If provider is started while the server
         # is not responding due to a Rate Limit then _init_network errors

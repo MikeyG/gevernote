@@ -6,7 +6,10 @@ from keyring import get_password,set_password,delete_password
 from everpad.const import (
     CONSUMER_KEY, CONSUMER_SECRET, HOST,
 )
+# python built-in logging 
+import logging
 
+logger = logging.getLogger('gevernote-provider')
 
 class AuthWindow(Gtk.Window):
     def __init__(self, url_callback):
@@ -55,7 +58,9 @@ class AuthWindow(Gtk.Window):
         return False
 
 # Uses Evernote client to get oauth token
-def _get_evernote_token(app_debug):
+def _get_evernote_token( ):
+
+    logger.info("Authorizing")
     
     client = EvernoteClient(
         consumer_key=CONSUMER_KEY,
@@ -68,15 +73,15 @@ def _get_evernote_token(app_debug):
     if request_token['oauth_callback_confirmed']:
         url_callback = client.get_authorize_url(request_token)
         
-        self.app.log("URL:                 %s" % url_callback)
-        self.app.log("oauth_token:         %s" % request_token['oauth_token'])
-        self.app.log("oauth_token_secret:  %s" % request_token['oauth_token_secret'])
+        logger.debug("URL:                 %s" % url_callback)
+        logger.debug("oauth_token:         %s" % request_token['oauth_token'])
+        logger.debug("oauth_token_secret:  %s" % request_token['oauth_token_secret'])
             
         window = AuthWindow(url_callback)
         window.show_all()
         Gtk.main()
 
-        self.app.log("oauth_verifier:      %s" % window.oauth_verifier)
+        logger.debug("oauth_verifier:      %s" % window.oauth_verifier)
                                 
         if not (window.oauth_verifier == "None"):
             # get the token for authorization     
@@ -91,11 +96,11 @@ def _get_evernote_token(app_debug):
         	        
         Gtk.main_quit
         
-        self.app.log("user_token:          %s" % user_token)
+        logger.debug("user_token:          %s" % user_token)
     
     elif app_debug:
         # need app error checking/message here        
-        self.app.log("bad callback")    
+        logger.debug("bad callback")    
     
     # Token available?
     return user_token
@@ -111,6 +116,7 @@ def _get_evernote_token(app_debug):
 #
 # Return true if token exists
 def get_auth_token( ):
+    logger.debug("enauth: Auth check")
     return get_password('geverpad', 'oauth_token')
     
 #####
@@ -118,7 +124,9 @@ def get_auth_token( ):
 #
 # Delete token from keyring
 def delete_auth_token( ):
-    delete_password('geverpad', 'oauth_token')
+    if get_password('geverpad', 'oauth_token'):
+        logger.debug("enauth: Removing token")
+        delete_password('geverpad', 'oauth_token')
 
 #####
 #  change_auth( )
@@ -126,13 +134,12 @@ def delete_auth_token( ):
 # Like original Everpad, authorize toggles token, if authorized then
 # delete token, if not authorized then get token
 def change_auth_token( ):
-    if get_password('geverpad', 'oauth_token'):
-        delete_password('geverpad', 'oauth_token')
-        print "Found and deleted"
+    oauth_token = _get_evernote_token( )
+    if oauth_token != "None":
+        set_password('geverpad', 'oauth_token', oauth_token)
+        logger.debug("enauth: Token saved")
     else:
-        oauth_token = _get_evernote_token(True)
-        if oauth_token != "None":
-            set_password('geverpad', 'oauth_token', oauth_token)
+        logger.debug("enauth: Token not saved")
 
 
     

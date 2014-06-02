@@ -90,7 +90,7 @@ class NoteFilterer(object):
 
 class ProviderServiceQObject(QObject):
     """Signals holder for service"""
-    authenticate_signal = Signal(str)
+    authenticate_signal = Signal()
     remove_authenticate_signal = Signal()
     terminate = Signal()
 
@@ -522,16 +522,16 @@ class ProviderService(dbus.service.Object):
 
     #************************************************
     #   authenticate    
-    #   call   self.app.provider.authenticate( token )
+    #   call   self.app.provider.authenticate(  )
     #   No return    
     @dbus.service.method(
         "com.everpad.Provider",
-        in_signature='s', out_signature='',
+        in_signature='', out_signature='',
     )
-    def authenticate(self, token):
+    def authenticate(self):
         """Authenticate client with token"""
-        self.qobject.remove_authenticate_signal.emit()
-        self.qobject.authenticate_signal.emit(token)
+        # self.qobject.remove_authenticate_signal.emit()
+        self.qobject.authenticate_signal.emit( )
         if self.app.sync_thread.status != const.STATUS_SYNC:
             self.app.sync_thread.force_sync()
         self.data_changed()

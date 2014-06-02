@@ -3,7 +3,6 @@ from everpad.provider.sync.agent import SyncThread
 from everpad.provider.tools import get_db_session
 from everpad.specific import AppClass
 from everpad.tools import print_version
-#import everpad.provider.tools
 import everpad.provider.models
 from everpad.provider.enauth import get_auth_token,change_auth_token,delete_auth_token 
 
@@ -26,7 +25,6 @@ import logging
 
 # daemon.py Main everpad-provider file - started everpad-provider call to main( )
 
-
 class ProviderApp(AppClass):
 
     def __init__(self, verbose, *args, **kwargs):
@@ -45,7 +43,7 @@ class ProviderApp(AppClass):
         # Yes, quite drawn out with all my if verbose, but readable for me when 
         # I come back to this in a couple weeks or more
 
-        logging.basicConfig(level=logging.INFO)
+        #logging.basicConfig(level=logging.INFO)
         
         # create logger and set to debug
         self.logger = logging.getLogger('gevernote-provider')
@@ -65,9 +63,6 @@ class ProviderApp(AppClass):
 
         self.logger.info('Logging started.')
         
-        #log('Provider started.')
-        #log("sqlalchemy %s" % sqlalchemy.__version__)
-        
         # ref:  http://qt-project.org/doc/qt-4.8/qsettings.html
         #
         # For example, if your product is called Star Runner and your company 
@@ -85,7 +80,7 @@ class ProviderApp(AppClass):
         # "com.gevernote.Provider"  /GrevernoteProvider
         self.bus = dbus.service.BusName("com.everpad.Provider", session_bus)
         self.service = ProviderService(session_bus, '/EverpadProvider')
-
+        
         # subclass PySide.QtCore.QThread  - agent.py
         # setup Sync thread
         self.sync_thread = SyncThread()
@@ -99,7 +94,7 @@ class ProviderApp(AppClass):
         self.sync_thread.data_changed.connect(
             Slot()(self.service.data_changed),
         )
-        
+                
         # Start Sync Thread if provider is authenticated
         if get_auth_token( ):
             self.logger.debug('Auth - Starting Sync Thread.')
@@ -116,9 +111,9 @@ class ProviderApp(AppClass):
             self.provider_authenticate,
         )
         # on_authenticated @Slot
-        self.service.qobject.authenticate_signal.connect(
-            self.on_authenticated,
-        )
+        #self.service.qobject.authenticate_signal.connect(
+        #    self.on_authenticated,
+        #)
         # on_remove_authenticated @Slot
         self.service.qobject.remove_authenticate_signal.connect(
             self.on_remove_authenticated,
@@ -132,23 +127,27 @@ class ProviderApp(AppClass):
     # ************************************************************
 
     # add auth MKG
-    @Slot(str)
+    @Slot( )
     def provider_authenticate(self):
         # auth_geverpad_token enauth.py
-        change_auth_token( ) 
-        if get_auth_token( ) != "None":
+        self.logger.debug("Signal to authenticate")
+        result = change_auth_token( ) 
+        if result != "None":
+            self.logger.debug("Received token.")
             self.sync_thread.start( )
+        else:
+            self.logger.debug("No token.")
 
-    @Slot(str)
-    def on_authenticated(self, token):
-        # set_auth_token everpad/provider/tools.py 
-        #set_auth_token(token)
-        self.sync_thread.start()
+    #@Slot(str)
+    #def on_authenticated(self, token):
+    #    # set_auth_token everpad/provider/tools.py 
+    #    #set_auth_token(token)
+    #    self.sync_thread.start()
 
     @Slot()
     def on_remove_authenticated(self):
-        print("Remove Auth")
 
+        self.logger.debug("Signal to remove authenticate")
         self.sync_thread.timer.stop()
         self.sync_thread.quit()
         self.sync_thread.update_count = 0
