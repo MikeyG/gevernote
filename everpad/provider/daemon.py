@@ -83,6 +83,8 @@ class ProviderApp(AppClass):
         self.bus = dbus.service.BusName("com.everpad.Provider", session_bus)
         self.service = ProviderService(session_bus, '/EverpadProvider')
         
+        self.logger.debug("dbus setup complete")
+        
         # subclass PySide.QtCore.QThread  - agent.py
         # setup Sync thread
         self.sync_thread = SyncThread()
@@ -96,6 +98,8 @@ class ProviderApp(AppClass):
         self.sync_thread.data_changed.connect(
             Slot()(self.service.data_changed),
         )
+        
+        self.logger.debug("SyncThread init complete")
                 
         # Start Sync Thread if provider is authenticated
         if get_auth_token( ):
