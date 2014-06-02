@@ -140,6 +140,8 @@ def change_auth_token( ):
         logger.debug("enauth: Token saved")
     else:
         logger.debug("enauth: Token not saved")
+        
+    return oauth_token
 
 
     
