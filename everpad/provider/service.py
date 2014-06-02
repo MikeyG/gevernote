@@ -6,7 +6,7 @@ from .. import const, basetypes as btype
 from ..specific import AppClass
 from . import models
 from .tools import get_db_session
-from everpad.provider.enauth import get_auth_token
+from everpad.provider.enauth import get_auth_token, change_auth_token
 import dbus
 import dbus.service
 import time
@@ -531,9 +531,10 @@ class ProviderService(dbus.service.Object):
     def authenticate(self):
         """Authenticate client with token"""
         # self.qobject.remove_authenticate_signal.emit()
-        self.qobject.authenticate_signal.emit( )
+        # self.qobject.authenticate_signal.emit( )
         #if self.app.sync_thread.status != const.STATUS_SYNC:
         #    self.app.sync_thread.force_sync()
+        change_auth_token( )
         self.data_changed()
 
     #************************************************
