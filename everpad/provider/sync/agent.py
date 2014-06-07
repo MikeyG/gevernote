@@ -17,6 +17,7 @@ from evernote.api.client import EvernoteClient
 
 # python built-in logging 
 import logging
+logger = logging.getLogger('gevernote-provider')
 
 """
     Rate Limit handling:
@@ -138,7 +139,7 @@ class SyncThread(QtCore.QThread):
     def _init_db(self):
         """Init database"""
         
-        self.app.log("Execute _init_db")
+        logger.debug("Execute _init_db")
         self.session = tools.get_db_session()
 
     # *** Initialize Sync
@@ -146,7 +147,7 @@ class SyncThread(QtCore.QThread):
     def _init_sync(self):
         """Init sync"""
         
-        self.app.log("Execute _init_sync")
+        logger.debug("Execute _init_sync")
         
         # set status to None         
         self.status = const.STATUS_NONE
@@ -191,13 +192,14 @@ class SyncThread(QtCore.QThread):
     def _init_network(self):
         """Init connection to remote server"""
         
-        self.app.log("Execute _init_network")        
+        logger.debug("Execute _init_network")        
         
         while True:
             try:
             	 # pull token from keyring
-                self.auth_token = get_auth_token()
-                
+                logger.debug("init network auth_token")
+                self.auth_token = get_auth_token( )
+                                             
                 # use EvernoteClient() to get userstore and notestore
                 client = EvernoteClient(token=self.auth_token, sandbox=False)
                 self.user_store = client.get_user_store()
@@ -209,7 +211,7 @@ class SyncThread(QtCore.QThread):
                 break
             except EDAMSystemException, e:
                 if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-                    self.app.log(
+                    logger.error(
                         "Rate limit _init_network: %d minutes - sleeping" % 
                         (e.rateLimitDuration/60)
                     )
@@ -219,12 +221,12 @@ class SyncThread(QtCore.QThread):
                     time.sleep(e.rateLimitDuration)
                     self.status = const.STATUS_NONE
             except socket.error, e:
-                self.app.log(
+                logger.error(
                     "Couldn't connect to remote server. Got: %s" %
                         traceback.format_exc()
                 )
                 SyncStatus.connect_error_count+=1
-                self.app.log(
+                logger.error(
                     "Total connect errors: %d" % SyncStatus.connect_error_count)
                 time.sleep(30)
                 
@@ -251,11 +253,11 @@ class SyncThread(QtCore.QThread):
             self.mutex.lock()
             self.wait_condition.wait(self.mutex)
             
-            if tools.get_auth_token():
+            if get_auth_token():
                 # do sync ....
                 self.perform()
             else:
-                self.app.log("I shouldn't even be here!")
+                logger.error("I shouldn't even be here!")
 
             self.mutex.unlock()
             
@@ -269,7 +271,7 @@ class SyncThread(QtCore.QThread):
     def perform(self):
         """Perform all sync"""
         
-        self.app.log("Execute perform( )")
+        logger.debug("Execute perform( )")
 
         # A good place to check and wait if rate limited
         if SyncStatus.rate_limit:

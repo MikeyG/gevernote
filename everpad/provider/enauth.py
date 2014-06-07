@@ -3,12 +3,12 @@ from gi.repository import WebKit
 import urlparse  
 from evernote.api.client import EvernoteClient
 from keyring import get_password,set_password,delete_password
-from everpad.const import (
+from everpad.provider.const import (
     CONSUMER_KEY, CONSUMER_SECRET, HOST,
+    SANDBOX_ENABLE, APP_URL,
 )
 # python built-in logging 
 import logging
-
 logger = logging.getLogger('gevernote-provider')
 
 class AuthWindow(Gtk.Window):
@@ -51,7 +51,9 @@ class AuthWindow(Gtk.Window):
                 self.oauth_verifier = parsed_uri['oauth_verifier']
                 self.close( )
         # easy way to handle a cancel button on auth page        
-        elif not cb_uri.startswith(HOST):
+        elif not cb_uri.startswith(("https://%s" % HOST)):
+            self.close( )
+        elif self.oauth_verifier != "None":
             self.close( )
         # just do nothing this time        
         else:
@@ -67,10 +69,10 @@ def _get_evernote_token( ):
     client = EvernoteClient(
         consumer_key=CONSUMER_KEY,
         consumer_secret=CONSUMER_SECRET,
-        sandbox=False
+        sandbox=SANDBOX_ENABLE
     )    
 
-    request_token = client.get_request_token("http://everpad/")    
+    request_token = client.get_request_token(APP_URL)    
 
     if request_token['oauth_callback_confirmed']:
         url_callback = client.get_authorize_url(request_token)
