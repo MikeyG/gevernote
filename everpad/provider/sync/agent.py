@@ -275,7 +275,7 @@ class SyncThread(QtCore.QThread):
 
         # A good place to check and wait if rate limited
         if SyncStatus.rate_limit:
-            self.app.log("RateLimit early perform( ) - sleeping")
+            logger.error("RateLimit early perform( ) - sleeping")
             self.status = const.STATUS_RATE
             time.sleep(SyncStatus.rate_limit)
             # clear rate limit
@@ -290,31 +290,31 @@ class SyncThread(QtCore.QThread):
         # update server sync info
         self._get_sync_state( )
 
+        # USN stats to log. Additionally, update_count will be the start and srv_update_count
+        # will be the initial high USN for the getFilteredSyncChunk calls to retrieve data
+        # from the server
+        logger.info("Local account updates count:  %s" % self.sync_state.update_count)
+        logger.info("Remote account updates count: %s" % self.sync_state.srv_update_count)  
+
         if self.sync_state.need_full_sync:
-            self.app.log("force_sync sync")
+            logger.info("Sync: force_sync sync")
             # set update_count to 0 for full sync
             self.sync_state.update_count = 0
             need_to_update = True            
         elif self.sync_state.srv_fullSyncBefore > self.sync_state.srv_current_time:
             # Full sync needed
-            self.app.log("fullSyncBefore sync")
+            logger.info("Sync: fullSyncBefore sync")
             # set update_count to 0 for full sync
             self.sync_state.update_count = 0
             need_to_update = True
         elif self.sync_state.update_count < self.sync_state.srv_update_count:
             # Do incremental sync
-            self.app.log("increment sync")
+            logger.info("Sync: increment sync")
             need_to_update = True
         else:
-            self.app.log("local only sync")
+            logger.info("Sync: local only sync")
             need_to_update = False
  
-        # USN stats to log. Additionally, update_count will be the start and srv_update_count
-        # will be the initial high USN for the getFilteredSyncChunk calls to retrieve data
-        # from the server
-        self.app.log("Local account updates count:  %s" % self.sync_state.update_count)
-        self.app.log("Remote account updates count: %s" % self.sync_state.srv_update_count)        
-
         # Need a sync or update?            
         if need_to_update:
             self.remote_changes(
@@ -330,14 +330,14 @@ class SyncThread(QtCore.QThread):
         # If Rate Limit in either remote or local, tell us
         # cleanup and get out        
         if SyncStatus.rate_limit:
-            self.app.log("Rate limit no full sync.")
+            logger.error("Rate limit no full sync.")
             self.session.rollback()
             self._init_db()
             self.data_changed.emit()
             self.status = const.STATUS_RATE
             self.sync_state_changed.emit(const.SYNC_STATE_FINISH) 
         else:
-            self.app.log("Sync performed.")	
+            logger.info("Sync performed.")	
 
             # if we get a good finish - update the count to match server
             self.sync_state.update_count = self.sync_state.srv_update_count
@@ -355,7 +355,7 @@ class SyncThread(QtCore.QThread):
     def _get_sync_state(self):
         """Get sync state"""
         
-        self.app.log("Execute _get_sync_state")
+        logger.debug("Execute _get_sync_state")
         
         while True:
             try:
@@ -368,7 +368,7 @@ class SyncThread(QtCore.QThread):
                 break
             except EDAMSystemException, e:
                 if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-                    self.app.log(
+                    logger.error(
                         "Rate limit _init_sync_state: %d minutes - sleeping" % 
                         (e.rateLimitDuration/60)
                     )
@@ -380,10 +380,10 @@ class SyncThread(QtCore.QThread):
             except socket.error, e:
                 # MKG: I want to track connect errors
                 SyncStatus.connect_error_count+=1
-                self.app.log(
+                logger.error(
                     "Couldn't connect to remote server. Got: %s" %
                     traceback.format_exc())
-                self.app.log(
+                logger.error(
                     "Total connect errors: %d" % SyncStatus.connect_error_count)
                 # This is most likely a network failure. Return False so
                 # everpad-provider won't lock up and can try to sync up in the
@@ -411,7 +411,7 @@ class SyncThread(QtCore.QThread):
     def remote_changes(self, chunk_start_after, chunk_end):
         """Receive remote changes from evernote"""
 
-        self.app.log('Running remote_changes()')
+        logger.debug('Running remote_changes()')
         
         # Notebooks
         self.sync_state_changed.emit(const.SYNC_STATE_NOTEBOOKS_REMOTE)
@@ -446,7 +446,7 @@ class SyncThread(QtCore.QThread):
     def local_changes(self):
         """Send local changes to evernote server"""
 
-        self.app.log('Running local_changes()')
+        logger.debug('Running local_changes()')
 
         # Notebooks
         self.sync_state_changed.emit(const.SYNC_STATE_NOTEBOOKS_LOCAL)
@@ -468,6 +468,7 @@ class SyncThread(QtCore.QThread):
     # get sync args for local_changes and remote_changes
     def _get_sync_args(self):
         """Get sync arguments"""
+        logger.debug('Get sync args')        
         return self.auth_token, self.session, self.note_store, self.user_store
 
 

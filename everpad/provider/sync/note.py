@@ -11,6 +11,10 @@ from .base import BaseSync, SyncStatus
 import time
 import binascii
 
+# python built-in logging 
+import logging
+logger = logging.getLogger('gevernote-provider')
+
 
 # ****** Note:  BaseSync, SyncStatus 
 #        Base class for sync - base.py
@@ -424,6 +428,8 @@ class PullNote(BaseSync, ShareNoteMixin):
         #   create conflict note  
         # if in database if ! const.ACTION_CHANGE
         if note.updated < note_meta_ttype.updated:
+        	
+            logger.debug("Note: Update note.")
             
             # I have to get the full note
             note_full_ttype = self._get_full_note(note_meta_ttype)
@@ -443,6 +449,9 @@ class PullNote(BaseSync, ShareNoteMixin):
                 # else update database with new sever note
                 note.from_api(note_full_ttype, self.session)
 
+        else:
+            logger.debug("Note: No update required.")        
+        
         return note
 
     # **************** Create Conflict ****************
@@ -454,6 +463,8 @@ class PullNote(BaseSync, ShareNoteMixin):
     #
     def _create_conflict(self, note, note_full_ttype):
         """Create conflict note"""
+        
+        logger.debug("Note: Conflict note.")
         
         # generate a new local note and populate it with
         # server note data
@@ -482,6 +493,8 @@ class PullNote(BaseSync, ShareNoteMixin):
     #
     def _create_note(self, note_meta_ttype):
         """Create new note"""
+        
+        logger.debug("Note: Create note.")        
         
         # returns Types.Note with Note content, binary contents 
         # of the resources and their recognition data will be omitted
@@ -513,6 +526,8 @@ class PullNote(BaseSync, ShareNoteMixin):
     #
     def _remove_notes(self):
         """Remove not exists notes"""
+        
+        logger.debug("Note: Remove notes.")
         
         if self._exists:
             q = ((~models.Note.id.in_(self._exists) |

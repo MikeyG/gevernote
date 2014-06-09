@@ -9,6 +9,11 @@ from .. import models
 from .base import BaseSync, SyncStatus
 import regex
 
+# python built-in logging 
+import logging
+logger = logging.getLogger('gevernote-provider')
+
+
 # ****** Contains:
 #        PushNotebook and PullNoteBook
 
@@ -25,7 +30,7 @@ class PushNotebook(BaseSync):
         for notebook in self.session.query(models.Notebook).filter(
             models.Notebook.action != const.ACTION_NONE,
         ):
-            self.app.log(
+            logger.info(
                 'Pushing notebook "%s" to remote server.' % notebook.name)
 
             try:
@@ -133,7 +138,7 @@ class PullNotebook(BaseSync):
             if SyncStatus.rate_limit:
                 break
 
-            self.app.log(
+            logger.info(
                 'Pulling notebook "%s" from remote server.' % notebook_meta_ttype.name)                
                 
             try:
@@ -187,7 +192,7 @@ class PullNotebook(BaseSync):
             # EEE if a rate limit happens 
             except EDAMSystemException, e:
                 if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
-                    self.app.log(
+                    logger.error(
                         "Rate limit in _get_all_notebooks: %d minutes" % 
                             (e.rateLimitDuration/60)
                     )
