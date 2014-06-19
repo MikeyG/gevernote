@@ -45,7 +45,7 @@ class AuthWindow(Gtk.Window):
         logger.debug("nav_callback uri:  %s" % cb_uri)
         
         # check if this is the verifier        
-        if "everpad" and "oauth_verifier" in cb_uri:
+        if "gevernote" and "oauth_verifier" in cb_uri:
             if self.oauth_verifier == "None":
                 parsed_uri = dict(urlparse.parse_qsl(cb_uri))
                 self.oauth_verifier = parsed_uri['oauth_verifier']
