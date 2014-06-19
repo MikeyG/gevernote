@@ -1,4 +1,4 @@
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from evernote.edam.error.ttypes import EDAMUserException, EDAMSystemException, EDAMErrorCode
 from evernote.edam.limits import constants as limits
 from evernote.edam.type import ttypes
@@ -130,8 +130,8 @@ class PullNotebook(BaseSync):
     def pull(self, chunk_start_after, chunk_end):
         """Receive notebooks from server"""
 
-        # okay, so _get_all_tags uses a generator to yield each note
-        # _get_all_tags using getFilteredSyncChunk returns SyncChunk
+        # _get_all_notebooks uses a generator to yield each note
+        # _get_all_notebooks using getFilteredSyncChunk returns SyncChunk
         for notebook_meta_ttype in self._get_all_notebooks(chunk_start_after, chunk_end):
 
             # EEE Rate limit from _get_all_notes then break
@@ -228,16 +228,24 @@ class PullNotebook(BaseSync):
     def _update_notebook(self, notebook_ttype):
         """Try to update notebook from ttype"""
        
-        print("NB query")        
         # is the notebook in the local database?
         # if NoResultFound then return and create new
-        notebook = self.session.query(models.Notebook).filter(
-            models.Notebook.guid == notebook_ttype.guid,
-        ).one()
-        print("NB query")        
-        # if is in database then update it from the server
-        if notebook.service_updated < notebook_ttype.serviceUpdated:
-            notebook.from_api(notebook_ttype)
+        try:        
+            notebook = self.session.query(models.Notebook).filter(
+                models.Notebook.guid == notebook_ttype.guid,
+            ).one()
+            
+            logger.debug("Notebook: Update found notebook.")
+
+            # if is in database then update it from the server
+            if notebook.service_updated < notebook_ttype.serviceUpdated:
+                logger.debug("Notebook: Updating notebook.")                
+                notebook.from_api(notebook_ttype)
+
+        except NoResultFound:
+            logger.debug("Notebook: NoResultFound checking for update.")
+        except MultipleResultsFound:
+            logger.debug("Notebook: MultipleResultsFound checking for update.")            
             
         return notebook
 
@@ -245,11 +253,15 @@ class PullNotebook(BaseSync):
     #
     def _create_notebook(self, notebook_ttype):
         """Create notebook from ttype"""
-        
+
+        logger.debug("Notebook: Create notebook.")
+                
         # create new notebook -- Notebook - models.py
         notebook = models.Notebook(guid=notebook_ttype.guid)
         # fill in values 
         notebook.from_api(notebook_ttype)
+        
+        logger.debug("Notebook: Created notebook.")        
         
         # add/commit to local database
         self.session.add(notebook)
