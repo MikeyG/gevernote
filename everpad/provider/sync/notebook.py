@@ -178,8 +178,9 @@ class PullNotebook(BaseSync):
         except exc.SQLAlchemyError:
             logger.error("Commit error")
  
-        # remove unneeded from database
-        if self.sync_type:
+        # remove unneeded from database on a full sync
+        # handle it differently on incremental - see agent.py
+        if not self.sync_type:
             self._remove_notebooks( )
 
     # **************** Get All Notebooks ****************
