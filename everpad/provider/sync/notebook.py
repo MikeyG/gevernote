@@ -141,6 +141,10 @@ class PullNotebook(BaseSync):
 
     def pull(self, chunk_start_after, chunk_end):
         """Receive notebooks from server"""
+        
+        # if chunk_start_after is 0 this is a full sync
+        # I just want a true or false here i.e. 0 or >0
+        self.sync_type = chunk_start_after
 
         # _get_all_notebooks uses a generator to yield each note
         # _get_all_notebooks using getFilteredSyncChunk returns SyncChunk
@@ -175,7 +179,8 @@ class PullNotebook(BaseSync):
             logger.error("Commit error")
  
         # remove unneeded from database
-        self._remove_notebooks()
+        if self.sync_type:
+            self._remove_notebooks( )
 
     # **************** Get All Notebooks ****************
     #
