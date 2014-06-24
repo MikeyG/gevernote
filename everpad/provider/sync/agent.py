@@ -1,4 +1,3 @@
-from evernote.edam.error.ttypes import EDAMUserException, EDAMSystemException, EDAMErrorCode
 from PySide import QtCore
 from datetime import datetime
 from ... import const
@@ -10,10 +9,12 @@ import time
 import traceback
 import socket
 
+from evernote.edam.error.ttypes import EDAMUserException, EDAMSystemException, EDAMErrorCode
+from evernote.api.client import EvernoteClient
+
 # Keep track of various sync errors, etc.
 from .base import SyncStatus
 from everpad.provider.enauth import get_auth_token
-from evernote.api.client import EvernoteClient
 
 # python built-in logging 
 import logging
@@ -293,30 +294,31 @@ class SyncThread(QtCore.QThread):
         # USN stats to log. Additionally, update_count will be the start and srv_update_count
         # will be the initial high USN for the getFilteredSyncChunk calls to retrieve data
         # from the server
-        logger.info("Local account updates count:  %s" % self.sync_state.update_count)
-        logger.info("Remote account updates count: %s" % self.sync_state.srv_update_count)  
+        logger.info("Agent: Local account updates count:  %s" % self.sync_state.update_count)
+        logger.info("Agent: Remote account updates count: %s" % self.sync_state.srv_update_count)  
 
         if self.sync_state.need_full_sync:
-            logger.info("Sync: force_sync sync")
+            logger.info("Agent: Sync: force_sync sync")
             # set update_count to 0 for full sync
             self.sync_state.update_count = 0
             need_to_update = True            
         elif self.sync_state.srv_fullSyncBefore > self.sync_state.srv_current_time:
             # Full sync needed
-            logger.info("Sync: fullSyncBefore sync")
+            logger.info("Agent: Sync: fullSyncBefore sync")
             # set update_count to 0 for full sync
             self.sync_state.update_count = 0
             need_to_update = True
         elif self.sync_state.update_count < self.sync_state.srv_update_count:
             # Do incremental sync
-            logger.info("Sync: increment sync")
+            logger.info("Agent: Sync: increment sync")
             need_to_update = True
         else:
-            logger.info("Sync: local only sync")
+            logger.info("Agent: Sync: local only sync")
             need_to_update = False
  
         # Need a sync or update?            
         if need_to_update:
+            logger.debug("Agent: Need to update - running remote.")
             self.remote_changes(
                 self.sync_state.update_count,
                 self.sync_state.srv_update_count
@@ -324,8 +326,9 @@ class SyncThread(QtCore.QThread):
         
         # No fancy stuff, just brute checks        
         if not SyncStatus.rate_limit:
+            logger.debug("Agent: running local.")
             # If not rate limit then do local changes            
-            self.local_changes()
+            self.local_changes( )
             
         # If Rate Limit in either remote or local, tell us
         # cleanup and get out        
@@ -344,11 +347,13 @@ class SyncThread(QtCore.QThread):
             # last sync date/time set to current
             self.sync_state.last_sync = datetime.now( )
             # set need_full_sync false so incremental updates will happen
-            self.sync_state.need_full_sync =0
+            self.sync_state.need_full_sync = 0
             # tell everyone we are done
             self.data_changed.emit()
             self.status = const.STATUS_NONE
             self.sync_state_changed.emit(const.SYNC_STATE_FINISH)
+            
+            logger.debug("Agent: Sync signals complete.")
 
     # *** Get Server Sync State
     # Sync table with current sync status
@@ -396,14 +401,17 @@ class SyncThread(QtCore.QThread):
     #
     def force_sync(self):
         """Start sync"""
-        self.timer.stop()
+        logger.debug("Force sync called")
+        self.timer.stop( )
         self.sync_state.need_full_sync = 1
-        self.sync()
-        self.update_timer()
+        self.sync( )
+        self.update_timer( )
+        logger.debug("Force sync complete")
 
     @QtCore.Slot()
     def sync(self):
         """Do sync"""
+        logger.debug("Sync slot - wakeall")
         self.wait_condition.wakeAll()
 
     # ******** Process Remote Changes *********
@@ -414,30 +422,35 @@ class SyncThread(QtCore.QThread):
         logger.debug('Running remote_changes()')
         
         # Notebooks
+        logger.debug("Agent: PullNotebook.")
         self.sync_state_changed.emit(const.SYNC_STATE_NOTEBOOKS_REMOTE)
         notebook.PullNotebook(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
         if SyncStatus.rate_limit:
             return
         	
         # Tags
+        logger.debug("Agent: PullTag.")
         self.sync_state_changed.emit(const.SYNC_STATE_TAGS_REMOTE)
         tag.PullTag(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
         if SyncStatus.rate_limit:
             return
             
         # Notes and Resources
+        logger.debug("Agent: PullNote.")
         self.sync_state_changed.emit(const.SYNC_STATE_NOTES_REMOTE)
         note.PullNote(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
         if SyncStatus.rate_limit:
             return
             
         # Linked Notebooks
+        logger.debug("Agent: PullNoteLBN.")
         self.sync_state_changed.emit(const.SYNC_STATE_LBN_REMOTE)
         notebooklinked.PullLBN(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
         if SyncStatus.rate_limit:
             return
                     
         # Searches
+        logger.debug("Agent: PullSearch.")
         self.sync_state_changed.emit(const.SYNC_STATE_SEARCHES_REMOTE)
         savedsearch.PullSearch(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
 
@@ -449,18 +462,21 @@ class SyncThread(QtCore.QThread):
         logger.debug('Running local_changes()')
 
         # Notebooks
+        logger.debug("Agent: PushNotebook.")
         self.sync_state_changed.emit(const.SYNC_STATE_NOTEBOOKS_LOCAL)
         notebook.PushNotebook(*self._get_sync_args()).push()
         if SyncStatus.rate_limit:
             return
             
         # Tags
+        logger.debug("Agent: PushTags.")
         self.sync_state_changed.emit(const.SYNC_STATE_TAGS_LOCAL)
         tag.PushTag(*self._get_sync_args()).push()
         if SyncStatus.rate_limit:
             return
             
         # Notes and Resources
+        logger.debug("Agent: PushNote.")
         self.sync_state_changed.emit(const.SYNC_STATE_NOTES_LOCAL)
         note.PushNote(*self._get_sync_args()).push()
         
@@ -468,7 +484,7 @@ class SyncThread(QtCore.QThread):
     # get sync args for local_changes and remote_changes
     def _get_sync_args(self):
         """Get sync arguments"""
-        logger.debug('Get sync args')        
+        logger.debug('Called Get sync args')        
         return self.auth_token, self.session, self.note_store, self.user_store
 
 

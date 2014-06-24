@@ -668,10 +668,12 @@ class ProviderService(dbus.service.Object):
     )
     def is_first_synced(self):
         """Check is first sync performed"""
-        return bool(self.session.query(models.Notebook).filter(
-            (models.Notebook.action != const.ACTION_DELETE)
-            & (models.Notebook.default == True)
-        ).count())
+        return True
+
+#        return bool(self.session.query(models.Notebook).filter(
+#            (models.Notebook.action != const.ACTION_DELETE)
+#            & (models.Notebook.default == True)
+#        ).count())
 
     #************************************************
     #   Full Sync    

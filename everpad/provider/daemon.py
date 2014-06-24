@@ -221,6 +221,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--verbose', action='store_true', help='verbose output')
     parser.add_argument('--version', '-v', action='store_true', help='show version')
+    parser.add_argument('--debug', '-d', action='store_true', help='debug output')
     args = parser.parse_args(sys.argv[1:])
 
     # print version (tools.py) and exit. print_version executes sys.exit(0)

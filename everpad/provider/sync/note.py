@@ -188,7 +188,7 @@ class PushNote(BaseSync, ShareNoteMixin):
             note.action = const.ACTION_NONE
             self.app.log('Push new note "%s" failed.' % note.title)
             self.app.log(edue)
-        except Errors.EDAMNotFoundException, ednfe:
+        except EDAMNotFoundException, ednfe:
             ## Parent Notebook GUID doesn't correspond to an actual notebook
             note.action = const.ACTION_NONE
             self.app.log('Push new note "%s" failed.' % note.title)

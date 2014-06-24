@@ -1,9 +1,12 @@
 from sqlalchemy import create_engine, __version__ 
 from sqlalchemy.orm import sessionmaker
-from .models import Base
+
+from everpad.provider.models import Base
+from everpad.const import DB_PATH
+
 import os
 
-from everpad.const import DB_PATH
+DB_MSG_ECHO = False
 
 # change item to lower case
 # used local only
@@ -20,8 +23,12 @@ def get_db_session(db_path=None):
     # Ex: engine = create_engine('sqlite:///:memory:', echo=True)
     # echo True - logging to python
     # uses mysql-python as the default DBAPI
-    engine = create_engine('sqlite:///%s' % db_path, echo=True)
+
+    # postgresql can I swap??? to
+    engine = create_engine('sqlite:///%s' % db_path, echo=DB_MSG_ECHO)
     Base.metadata.create_all(engine)
+
+    # creates a factory and assign the name Session    
     Session = sessionmaker(bind=engine)
     session = Session()
     conn = session.connection()

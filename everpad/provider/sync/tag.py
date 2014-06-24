@@ -9,10 +9,18 @@ from .. import models
 from .base import BaseSync, SyncStatus
 import regex
 
+# python built-in logging 
+import logging
+logger = logging.getLogger('gevernote-provider')
+
+
 # ****** Contains:
 #        PushTag and Pulltag
 
 
+# *************************************************
+# **************      Push Tag       **************
+# *************************************************
 class PushTag(BaseSync):
     """Push tags to server"""
 
@@ -21,7 +29,7 @@ class PushTag(BaseSync):
         for tag in self.session.query(models.Tag).filter(
             models.Tag.action != const.ACTION_NONE,
         ):
-            self.app.log('Pushing tag "%s" to remote server.' % tag.name)
+            logger.info('Pushing tag "%s" to remote server.' % tag.name)
 
             try:
                 tag_ttype = self._create_ttype(tag)
@@ -73,10 +81,13 @@ class PushTag(BaseSync):
             self.app.log(e)
 
 
+# *************************************************
+# **************      Pull Tag       **************
+# *************************************************
 class PullTag(BaseSync):
     """Pull tags from server"""
 
-    # Args:
+    # BaseSync Args:
     #    self.auth_token, self.session,
     #    self.note_store, self.user_store
     #
@@ -87,7 +98,7 @@ class PullTag(BaseSync):
     def pull(self, chunk_start_after, chunk_end):
         """Pull tags from server"""
 
-        # okay, so _get_all_tags uses a generator to yield each note
+        # _get_all_tags uses a generator to yield each note
         # _get_all_tags using getFilteredSyncChunk returns SyncChunk
         for tag_meta_ttype in self._get_all_tags(chunk_start_after, chunk_end):
 
@@ -95,12 +106,12 @@ class PullTag(BaseSync):
             if SyncStatus.rate_limit:
                 break
             
-            self.app.log(
+            logger.info(
                 'Pulling tag "%s" from remote server.' % tag_meta_ttype.name) 
 
             try:
                 # check if tag exists and if needs update
-                # also handle conflicts
+                # tbd - handle conflicts
                 tag = self._update_tag(tag_meta_ttype)
                 
                 # EEE Rate limit from _update_tag then break
@@ -121,13 +132,16 @@ class PullTag(BaseSync):
                 
             self._exists.append(tag.id)
 
+        # commit local changes
         self.session.commit()
+        
+        # remove unneeded from database
         self._remove_tags()
 
     # **************** Get All Tags ****************
     #
     #  Uses getFilteredSyncChunk to pull tag data
-    #  from the server and yield each note for processing.
+    #  from the server and yield each tag for processing.
     #  chunk_start_after will be zero for a full sync and will
     #  be the local store high USN for increment sync
     #
@@ -136,14 +150,23 @@ class PullTag(BaseSync):
         
         while True:
             try:
-                sync_chunk = self.note_store.getFilteredSyncChunk(
-                    self.auth_token,
-                    chunk_start_after,
-                    chunk_end,
-                    SyncChunkFilter(
-                        includeTags=True,
-                    )
-                ) 
+                logger.debug("Get Chunk chunk_start_after = %d" % chunk_start_after)
+                logger.debug("Get Chunk chunk_end         = %d" % chunk_end)
+
+                if chunk_start_after != chunk_end:
+                    sync_chunk = self.note_store.getFilteredSyncChunk(
+                        self.auth_token,
+                        chunk_start_after,
+                        chunk_end,
+                        SyncChunkFilter(
+                            includeTags=True,
+                        )
+                    ) 
+                else:
+                    # nothing to do so return                    
+                    logger.debug("All done before getFilteredSyncChunk call.")
+                    break 
+
             # EEE if a rate limit happens 
             except EDAMSystemException, e:
                 if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
@@ -151,23 +174,29 @@ class PullTag(BaseSync):
                         "Rate limit in _get_all_tags: %d minutes" % 
                             (e.rateLimitDuration/60)
                     )
+                    # tmp using this to track Rate Limit
                     SyncStatus.rate_limit = e.rateLimitDuration
                     break
         
             # https://www.jeffknupp.com/blog/2013/04/07/
             #       improve-your-python-yield-and-generators-explained/
             # https://wiki.python.org/moin/Generators
-            # Each SyncChunk.tags is yielded (yield note) for 
+            # Each SyncChunk.tags is yielded (yield srv_tag) for 
             # create or update 
             try:            
+                
                 for srv_tag in sync_chunk.tags:
                     # no notes in this chunk                
                     if not srv_tag.guid:
+                        logger.debug("No more required guid type in chunk")
                         break
+
+                    # if tag exists process it 
                     yield srv_tag
             except:
-            	if sync_chunk.chunkHighUSN == sync_chunk.updateCount:
-            	    break 
+            	 if sync_chunk.chunkHighUSN == sync_chunk.updateCount:
+                    logger.debug("All done.")
+                    break 
 
             # Here chunkHighUSN is the highest USN returned by the current
             # getFilteredSyncChunk call.  If chunkHighUSN == chunk_end then
@@ -176,9 +205,24 @@ class PullTag(BaseSync):
             # chunk_start_after set to chunkHighUSN which will retrieve 
             # starting at chunkHighUSN+1 to chunk_end when calling 
             # getFilteredSyncChunk again - got it?
+            logger.debug("Loop chunk_start_after = %d" % chunk_start_after)
+            logger.debug("Loop sync_chunk.chunkHighUSN = %d" % sync_chunk.chunkHighUSN) 
             chunk_start_after = sync_chunk.chunkHighUSN
 
-    # new tag
+    # ************** Update Tag **************
+    #
+    def _update_tag(self, tag_ttype):
+        """Update tag if exists"""
+        
+        tag = self.session.query(models.Tag).filter(
+            models.Tag.guid == tag_ttype.guid,
+        ).one()
+        if tag.name != tag_ttype.name.decode('utf8'):
+            tag.from_api(tag_ttype)
+        return tag
+
+    # ************** Create Notebook **************
+    #
     def _create_tag(self, tag_ttype):
         """Create tag from server"""
         
@@ -201,15 +245,6 @@ class PullTag(BaseSync):
         
         return tag
 
-    # update tag
-    def _update_tag(self, tag_ttype):
-        """Update tag if exists"""
-        tag = self.session.query(models.Tag).filter(
-            models.Tag.guid == tag_ttype.guid,
-        ).one()
-        if tag.name != tag_ttype.name.decode('utf8'):
-            tag.from_api(tag_ttype)
-        return tag
 
     # remove tag
     def _remove_tags(self):

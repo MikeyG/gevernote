@@ -1,4 +1,5 @@
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from sqlalchemy import exc
 from evernote.edam.error.ttypes import EDAMUserException, EDAMSystemException, EDAMErrorCode
 from evernote.edam.limits import constants as limits
 from evernote.edam.type import ttypes
@@ -36,7 +37,7 @@ class PushNotebook(BaseSync):
             try:
                 notebook_ttype = self._create_ttype(notebook)
             except TTypeValidationFailed:
-                self.app.log('notebook %s skipped' % notebook.name)
+                logger.info('notebook %s skipped' % notebook.name)
                 notebook.action = const.ACTION_NONE
                 continue
 
@@ -45,7 +46,11 @@ class PushNotebook(BaseSync):
             elif notebook.action == const.ACTION_CHANGE:
                 self._push_changed_notebook(notebook, notebook_ttype)
 
-        self.session.commit()
+        try:
+            self.session.commit()
+        except exc.SQLAlchemyError:
+            logger.error("Commit error")
+
         self._merge_duplicates()
 
     def _create_ttype(self, notebook):
@@ -114,15 +119,22 @@ class PushNotebook(BaseSync):
                 note.notebook = original
 
             self.session.delete(notebook)
-        self.session.commit()
 
-
+        try:
+            self.session.commit()
+        except exc.SQLAlchemyError:
+            logger.error("Commit error")
+            
 # *************************************************
 # **************    Pull Notebook    **************
 # *************************************************
 class PullNotebook(BaseSync):
     """Pull notebook from server"""
 
+    # BaseSync Args:
+    #    self.auth_token, self.session,
+    #    self.note_store, self.user_store
+    #
     def __init__(self, *args, **kwargs):
         super(PullNotebook, self).__init__(*args, **kwargs)
         self._exists = []
@@ -134,45 +146,41 @@ class PullNotebook(BaseSync):
         # _get_all_notebooks using getFilteredSyncChunk returns SyncChunk
         for notebook_meta_ttype in self._get_all_notebooks(chunk_start_after, chunk_end):
 
-            # EEE Rate limit from _get_all_notes then break
+            # EEE Rate limit from _get_all_notebooks then break
             if SyncStatus.rate_limit:
                 break
 
             logger.info(
                 'Pulling notebook "%s" from remote server.' % notebook_meta_ttype.name)                
                 
-            try:
-                # check if notebook exists and if needs update
-                # also handle conflicts
-                notebook = self._update_notebook(notebook_meta_ttype)
-                
-                # EEE Rate limit from _update_tag then break
-                if SyncStatus.rate_limit:
-                    break
-                # If we get here the note has been created
-                
-            except NoResultFound:
-                
+            # check if notebook exists and if needs update
+            # tbd - also handle conflicts
+            notebook = self._update_notebook(notebook_meta_ttype)
+            
+            if not notebook:
                 # the tag is not in the local database so create
                 notebook = self._create_notebook(notebook_meta_ttype)
-
-                # EEE Rate limit from _create_notebook then break
-                if SyncStatus.rate_limit:
-                    break
-                # If we get here the note has been created
+                
+            # EEE Rate limit from _update or _create then break
+            if SyncStatus.rate_limit:
+            	 # rollback?
+                break
          
             self._exists.append(notebook.id)
 
         # commit local changes
-        self.session.commit()
-        
+        try:
+            self.session.commit()
+        except exc.SQLAlchemyError:
+            logger.error("Commit error")
+ 
         # remove unneeded from database
         self._remove_notebooks()
 
     # **************** Get All Notebooks ****************
     #
     #  Uses getFilteredSyncChunk to pull notebook data
-    #  from the server and yield each note for processing.
+    #  from the server and yield each notebook for processing.
     #  chunk_start_after will be zero for a full sync and will
     #  be the local store high USN for increment sync
     #
@@ -181,14 +189,23 @@ class PullNotebook(BaseSync):
         
         while True:
             try:
-                sync_chunk = self.note_store.getFilteredSyncChunk(
-                    self.auth_token,
-                    chunk_start_after,
-                    chunk_end,
-                    SyncChunkFilter(
-                        includeNotebooks=True,
+                logger.debug("Get Chunk chunk_start_after = %d" % chunk_start_after)
+                logger.debug("Get Chunk chunk_end         = %d" % chunk_end)
+
+                if chunk_start_after != chunk_end:
+                    sync_chunk = self.note_store.getFilteredSyncChunk(
+                        self.auth_token,
+                        chunk_start_after,
+                        chunk_end,
+                        SyncChunkFilter(
+                            includeNotebooks=True,
+                        )
                     )
-                ) 
+                else:
+                    # nothing to do so return                    
+                    logger.debug("All done before getFilteredSyncChunk call.")
+                    break                	
+                	 
             # EEE if a rate limit happens 
             except EDAMSystemException, e:
                 if e.errorCode == EDAMErrorCode.RATE_LIMIT_REACHED:
@@ -196,23 +213,30 @@ class PullNotebook(BaseSync):
                         "Rate limit in _get_all_notebooks: %d minutes" % 
                             (e.rateLimitDuration/60)
                     )
+
+                    # tmp using this to track Rate Limit                    
                     SyncStatus.rate_limit = e.rateLimitDuration
                     break
         
             # https://www.jeffknupp.com/blog/2013/04/07/
             #       improve-your-python-yield-and-generators-explained/
             # https://wiki.python.org/moin/Generators
-            # Each SyncChunk.tags is yielded (yield note) for 
-            # create or update 
+            # Each SyncChunk.tags is yielded for create or update 
             try:            
                 for srv_notebooks in sync_chunk.notebooks:
-                    # no notes in this chunk                
+                    
+                    # no notebooks in this chunk?                
                     if not srv_notebooks.guid:
+                        logger.debug("No more required guid type in chunk")
                         break
+                    
+                    # if notebook exists process it                      
                     yield srv_notebooks
+            
             except:
-            	if sync_chunk.chunkHighUSN == sync_chunk.updateCount:
-            	    break 
+                if sync_chunk.chunkHighUSN == sync_chunk.updateCount:
+                    logger.debug("All done.")
+                    break 
 
             # Here chunkHighUSN is the highest USN returned by the current
             # getFilteredSyncChunk call.  If chunkHighUSN == chunk_end then
@@ -221,6 +245,8 @@ class PullNotebook(BaseSync):
             # chunk_start_after set to chunkHighUSN which will retrieve 
             # starting at chunkHighUSN+1 to chunk_end when calling 
             # getFilteredSyncChunk again - got it?
+            logger.debug("Loop chunk_start_after = %d" % chunk_start_after)
+            logger.debug("Loop sync_chunk.chunkHighUSN = %d" % sync_chunk.chunkHighUSN)            
             chunk_start_after = sync_chunk.chunkHighUSN
 
     # ************** Update Notebook **************
@@ -235,7 +261,7 @@ class PullNotebook(BaseSync):
                 models.Notebook.guid == notebook_ttype.guid,
             ).one()
             
-            logger.debug("Notebook: Update found notebook.")
+            logger.debug("Notebook: found notebook.")
 
             # if is in database then update it from the server
             if notebook.service_updated < notebook_ttype.serviceUpdated:
@@ -243,7 +269,7 @@ class PullNotebook(BaseSync):
                 notebook.from_api(notebook_ttype)
 
         except NoResultFound:
-            logger.debug("Notebook: NoResultFound checking for update.")
+            notebook = False
         except MultipleResultsFound:
             logger.debug("Notebook: MultipleResultsFound checking for update.")            
             
@@ -265,7 +291,11 @@ class PullNotebook(BaseSync):
         
         # add/commit to local database
         self.session.add(notebook)
-        self.session.commit()
+
+        try:
+            self.session.commit()
+        except exc.SQLAlchemyError:
+            logger.error("Commit error")
 
         return notebook
 
@@ -273,6 +303,9 @@ class PullNotebook(BaseSync):
     #
     def _remove_notebooks(self):
         """Remove not received notebooks"""
+
+        logger.debug("Notebook: Removing notebooks.")
+        
         if self._exists:
             q = (~models.Notebook.id.in_(self._exists)
                 & (models.Notebook.action != const.ACTION_CREATE)
