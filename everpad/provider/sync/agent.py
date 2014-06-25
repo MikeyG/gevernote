@@ -425,6 +425,8 @@ class SyncThread(QtCore.QThread):
         logger.debug("Agent: PullNotebook.")
         self.sync_state_changed.emit(const.SYNC_STATE_NOTEBOOKS_REMOTE)
         notebook.PullNotebook(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
+        #if not SyncStatus.rate_limit and chunk_start_after:
+        #   notebook.ExpungeNotebook(*self._get_sync_args()).pull(chunk_start_after, chunk_end)
         if SyncStatus.rate_limit:
             return
         	
