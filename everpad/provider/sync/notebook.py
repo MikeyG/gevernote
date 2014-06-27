@@ -327,6 +327,9 @@ class PullNotebook(BaseSync):
 
         logger.debug("Notebook: Removing non-existing notebooks.")
         
+        
+        # WTF!  Here is where the incremental sync was going south ... the 
+        # entire database was being deleted.
         if self._exists:
             q = (~models.Notebook.id.in_(self._exists)
                 & (models.Notebook.action != const.ACTION_CREATE)
