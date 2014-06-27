@@ -237,7 +237,7 @@ class PullNotebook(BaseSync):
             # to _expunged for removal.
             if sync_chunk.expungedNotebooks:
                 self._expunged.append(sync_chunk.expungedNotebooks)
-                logger.debug("Expunged list: %s" % _expunged)            
+                logger.debug("Expunged list: %s" % self._expunged)            
         
             # https://www.jeffknupp.com/blog/2013/04/07/
             #       improve-your-python-yield-and-generators-explained/
@@ -345,7 +345,7 @@ class PullNotebook(BaseSync):
         
         logger.debug("Notebook: Removing expunged notebooks.") 
         
-        print _expunged          
+        print self._expunged          
                
    # !!!!!!!!!!!!  share notebooks ?????? 
             
