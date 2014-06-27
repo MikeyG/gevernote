@@ -138,6 +138,7 @@ class PullNotebook(BaseSync):
     def __init__(self, *args, **kwargs):
         super(PullNotebook, self).__init__(*args, **kwargs)
         self._exists = []
+        self._expunged = []
 
     def pull(self, chunk_start_after, chunk_end):
         """Receive notebooks from server"""
@@ -181,7 +182,13 @@ class PullNotebook(BaseSync):
         # remove unneeded from database on a full sync
         # handle it differently on incremental - see agent.py
         if not self.sync_type:
+            # this was a full sync so do the normal notebook remove            
             self._remove_notebooks( )
+        else:
+            # Kind of confusing here, but let me explain. Since this is an incremental 
+            # sync, we need to call getFilteredSyncChunk to get expunged notebooks in 
+            # the start to end range and remove them from the database.  
+            self._remove_notebooks_expunged( )
 
     # **************** Get All Notebooks ****************
     #
@@ -205,6 +212,7 @@ class PullNotebook(BaseSync):
                         chunk_end,
                         SyncChunkFilter(
                             includeNotebooks=True,
+                            includeExpunged=True,
                         )
                     )
                 else:
@@ -223,6 +231,13 @@ class PullNotebook(BaseSync):
                     # tmp using this to track Rate Limit                    
                     SyncStatus.rate_limit = e.rateLimitDuration
                     break
+
+            # For incremental updates:
+            # if there are expunged notebooks in this chunk then append them
+            # to _expunged for removal.
+            if sync_chunk.expungedNotebooks:
+                self._expunged.append(sync_chunk.expungedNotebooks)
+                logger.debug("Expunged list: %s" % _expunged)            
         
             # https://www.jeffknupp.com/blog/2013/04/07/
             #       improve-your-python-yield-and-generators-explained/
@@ -310,7 +325,7 @@ class PullNotebook(BaseSync):
     def _remove_notebooks(self):
         """Remove not received notebooks"""
 
-        logger.debug("Notebook: Removing notebooks.")
+        logger.debug("Notebook: Removing non-existing notebooks.")
         
         if self._exists:
             q = (~models.Notebook.id.in_(self._exists)
@@ -320,9 +335,14 @@ class PullNotebook(BaseSync):
             q = ((models.Notebook.action != const.ACTION_CREATE)
                 & (models.Notebook.action != const.ACTION_CHANGE))
 
-        self.session.query(models.Notebook).filter(
-            q).delete(synchronize_session='fetch')
-            
-   
+        self.session.query(models.Notebook).filter(q).delete(synchronize_session='fetch')
+
+    def _remove_notebooks_expunged(self):
+        """Remove expunged notebooks""" 
+        
+        logger.debug("Notebook: Removing expunged notebooks.") 
+        
+        print _expunged          
+               
    # !!!!!!!!!!!!  share notebooks ?????? 
             
